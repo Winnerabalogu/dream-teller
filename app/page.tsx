@@ -1,103 +1,295 @@
-import Image from "next/image";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+'use client';
+
+import { useState, useEffect } from 'react';
+import { History, Database, Edit3, Sparkles, Plus, Cloud, Zap, BookOpen } from 'lucide-react';
+import { useDreams } from '@/hooks/useDreams';
+import { useSymbols } from '@/hooks/useSymbols';
+import { interpretDreamLocally } from '@/lib/utils';
+import DreamInput from '@/components/ui/DreamInput';
+import Interpretation from '@/components/dream/Interpretation';
+import ExportImport from '@/components/dream/ExportImport';
+import DictionaryModal from '@/components/modals/DictionaryModal';
+import Tabs from '@/components/ui/Tabs';
+import SearchBar from '@/components/dream/SearchBar';
+import type { Tab } from '@/components/ui/Tabs';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [interpretation, setInterpretation] = useState<any>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [showDictionaryModal, setShowDictionaryModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'patterns' | 'input' | 'history' | 'dictionary'>('input');
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  const { dreams, refetch: refetchDreams, patterns } = useDreams();
+  const { symbols, refetch: refetchSymbols } = useSymbols();
+
+  useEffect(() => {
+    if (interpretation) {
+      setIsAnimating(true);
+      const timer = setTimeout(() => setIsAnimating(false), 1000);
+      refetchDreams();
+      refetchSymbols();
+      return () => clearTimeout(timer);
+    }
+  }, [interpretation, refetchDreams, refetchSymbols]);
+
+  const handleInterpret = async (text: string) => {
+    if (!text.trim()) return;
+    try {
+      const interp = interpretDreamLocally(text, symbols);
+      setInterpretation(interp);
+    } catch (err) {
+      console.error(err);
+      setError('Interpretation hiccup—add more details!');
+    }
+  };
+
+  const tabs = [
+    { id: 'input', label: 'Interpret', icon: Sparkles },
+    { id: 'history', label: 'History', icon: History },
+    { id: 'patterns', label: 'Patterns', icon: Database },
+    { id: 'dictionary', label: 'Dictionary', icon: Edit3 },
+  ] as const satisfies Tab<'patterns' | 'input' | 'history' | 'dictionary'>[];
+
+  return (
+    <div className="min-h-screen relative overflow-hidden">
+      
+         {/* Floating clouds */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="cloud cloud-1"></div>
+        <div className="cloud cloud-2"></div>
+        <div className="cloud cloud-3"></div>
+        <div className="cloud cloud-4"></div>
+        <div className="cloud cloud-5"></div>
+      </div>
+      
+      {/* Content */}
+      <div className="relative z-10">
+        
+        <div className="max-w-4xl mx-auto px-6 pb-16">
+          {/* Header */}
+          <header className="text-center mb-12 pt-8 animate-fade-in">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Sparkles className="w-8 h-8 text-purple-300 animate-pulse" />
+              <h1 className="text-5xl md:text-6xl font-light tracking-tight text-gradient">
+                Dream Tale
+              </h1>
+              <Cloud className="w-8 h-8 text-blue-300 animate-pulse" />
+            </div>
+            <p className="text-purple-200 text-lg md:text-xl font-light opacity-90 max-w-2xl mx-auto">
+              Explore your subconscious mind. Discover hidden patterns. Unlock personal insights.
+            </p>
+          </header>
+
+          {/* Tabs */}
+          <div className="mb-8">
+            <Tabs
+              tabs={tabs}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          </div>
+
+          {/* Export/Import */}
+          {activeTab === 'input' && (
+            <div className="flex justify-center space-x-4 mb-6">
+              <ExportImport />
+            </div>
+          )}
+
+          {/* Tab Content */}
+          {activeTab === 'input' && (
+            <>
+              <DreamInput onInterpret={handleInterpret} error={error} />
+              {interpretation && (
+                <div className={`space-y-6 transition-all mt-8 ${isAnimating ? 'animate-fade-in' : ''}`}>
+                  <Interpretation interpretation={interpretation} />
+                </div>
+              )}
+
+              {/* Info Cards */}
+              {!interpretation && (
+                <div className="grid md:grid-cols-3 gap-4 mt-12 animate-slide-up">
+                  {[
+                    { icon: <Sparkles className="w-5 h-5" />, title: 'Instant Insights', desc: 'AI-powered dream analysis' },
+                    { icon: <BookOpen className="w-5 h-5" />, title: 'Symbol Dictionary', desc: 'Personal interpretation library' },
+                    { icon: <Zap className="w-5 h-5" />, title: 'Pattern Recognition', desc: 'Track recurring themes' },
+                  ].map((card, i) => (
+                    <div
+                      key={i}
+                      className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-all hover:bg-white/10 group cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 bg-purple-500/20 rounded-lg group-hover:bg-purple-500/30 transition-colors">
+                          <div className="text-purple-300">{card.icon}</div>
+                        </div>
+                        <h3 className="font-medium text-purple-100">{card.title}</h3>
+                      </div>
+                      <p className="text-purple-300 text-sm font-light">{card.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === 'history' && (
+            <section className="space-y-4 animate-fade-in">
+              <h2 className="text-2xl font-light mb-4">
+                Dream History ({dreams.length})
+              </h2>
+              {dreams.length === 0 ? (
+                <div className="card text-center py-12">
+                  <p className="text-purple-300">No dreams yet—start interpreting!</p>
+                </div>
+              ) : (
+                dreams.map((dream) => (
+                  <article
+                    key={dream.id}
+                    className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all"
+                  >
+                    <div className="text-sm text-purple-300 mb-2">
+                      {new Date(dream.date).toLocaleDateString()}
+                    </div>
+                    <p className="text-purple-200 mb-3 italic">
+                      &quot;{dream.text.substring(0, 100)}&hellip;&quot;
+                    </p>
+                    <details className="text-sm">
+                      <summary className="cursor-pointer text-blue-300 hover:text-blue-200">
+                        View Interpretation
+                      </summary>
+                      <div className="mt-2 text-indigo-200">
+                        <Interpretation interpretation={dream.interpretation} />
+                      </div>
+                    </details>
+                  </article>
+                ))
+              )}
+            </section>
+          )}
+
+          {activeTab === 'patterns' && (
+            <section className="space-y-6 animate-fade-in">
+              <h2 className="text-2xl font-light mb-4">Subconscious Patterns</h2>
+              {dreams.length < 2 ? (
+                <div className="card text-center py-12">
+                  <p className="text-purple-300">Record 2+ dreams to spot patterns.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+                    <h3 className="text-xl mb-4">Recurring Symbols (20%+ frequency)</h3>
+                    <ul className="space-y-2">
+                      {Object.entries(patterns.recurringSymbols).map(([sym, count]) => (
+                        <li key={sym} className="flex justify-between text-purple-200 py-2 border-b border-white/10 last:border-0">
+                          <span className="font-medium capitalize">{sym}</span>
+                          <span className="text-blue-300">
+                            {Math.round((Number(count) / dreams.length) * 100)}% ({Number(count)}x)
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
+                    <h3 className="text-xl mb-4">Dominant Themes</h3>
+                    <ul className="space-y-2">
+                      {Object.entries(patterns.themeFrequency).map(([theme, count]) => (
+                        <li key={theme} className="flex justify-between text-purple-200 py-2 border-b border-white/10 last:border-0">
+                          <span className="font-medium capitalize">{theme}</span>
+                          <span className="text-blue-300">
+                            {Math.round((Number(count) / dreams.length) * 100)}%
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              )}
+            </section>
+          )}
+
+          {activeTab === 'dictionary' && (
+            <section className="space-y-6 animate-fade-in">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-light">
+                  Symbol Dictionary ({symbols.length})
+                </h2>
+                <button
+                  onClick={() => setShowDictionaryModal(true)}
+                  className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-4 py-2 rounded-lg transition-all font-medium"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add / Edit</span>
+                </button>
+              </div>
+
+              {/* Integrated live search */}
+              <div className="max-w-xl mx-auto">
+                <SearchBar />
+              </div>
+
+              {/* Scrollable list */}
+              <div className="grid gap-4 max-h-[500px] overflow-y-auto scrollbar-hide">
+                {symbols.map((symbol) => (
+                  <div
+                    key={symbol.id}
+                    className="bg-white/5 backdrop-blur-lg rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-all flex justify-between items-start"
+                  >
+                    <div>
+                      <h4 className="font-medium text-purple-300 capitalize">{symbol.key}</h4>
+                      <p className="text-purple-200 text-sm leading-relaxed">{symbol.meaning}</p>
+                    </div>
+                    <button
+                      className="text-red-300 hover:text-red-400 transition"
+                      onClick={() => console.log('Delete', symbol.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {showDictionaryModal && (
+                <DictionaryModal onClose={() => setShowDictionaryModal(false)} />
+              )}
+            </section>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+
+      <style jsx>{`
+        .text-gradient {
+          background: linear-gradient(135deg, #c4b5fd 0%, #93c5fd 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        @keyframes blob {
+          0%, 100% {
+            transform: translate(0, 0) scale(1);
+          }
+          33% {
+            transform: translate(30px, -50px) scale(1.1);
+          }
+          66% {
+            transform: translate(-20px, 20px) scale(0.9);
+          }
+        }
+
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+      `}</style>
     </div>
   );
 }

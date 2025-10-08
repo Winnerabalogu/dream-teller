@@ -1,0 +1,49 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")  
+}
+
+model Dream {
+  id          String   @id @default(cuid())
+  date        DateTime @default(now())
+  text        String
+  interpretation Json    // { mainThemes: string[], emotionalTone: string, symbols: {symbol: string, meaning: string}[], personalInsight: string, guidance: string }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("dreams")
+}
+
+model Symbol {
+  id          Int       @id @default(autoincrement())
+  key         String     @unique
+  meaning     String
+  insight     String?
+  keywords    String[]
+  categoryId  Int
+  category    Category   @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt @default(now())
+}
+
+model Reflection {
+  id        String   @id @default(cuid())
+  dreamId   String
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([dreamId])
+  @@map("reflections")
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String     @unique
+  description String?
+  symbols     Symbol[]
+}
