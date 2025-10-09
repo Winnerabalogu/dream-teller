@@ -9,32 +9,37 @@ datasource db {
 }
 
 model Dream {
-  id          String   @id @default(cuid())
-  date        DateTime @default(now())
-  text        String
-  interpretation Json    // { mainThemes: string[], emotionalTone: string, symbols: {symbol: string, meaning: string}[], personalInsight: string, guidance: string }
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String       @id @default(cuid())
+  date           DateTime     @default(now())
+  text           String       @db.Text
+  interpretation Json         // { mainThemes: string[], emotionalTone: string, symbols: {symbol: string, meaning: string}[], personalInsight: string, guidance: string }
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  reflections    Reflection[]
 
+  @@index([date])
   @@map("dreams")
 }
 
 model Symbol {
-  id          Int       @id @default(autoincrement())
-  key         String     @unique
-  meaning     String
-  insight     String?
-  keywords    String[]
-  categoryId  Int
-  category    Category   @relation(fields: [categoryId], references: [id])
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt @default(now())
+  id         Int      @id @default(autoincrement())
+  key        String   @unique
+  meaning    String   @db.Text
+  insight    String?  @db.Text
+  keywords   String[]
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([categoryId])
 }
 
 model Reflection {
   id        String   @id @default(cuid())
   dreamId   String
-  text      String
+  dream     Dream    @relation(fields: [dreamId], references: [id], onDelete: Cascade)
+  text      String   @db.Text
   createdAt DateTime @default(now())
 
   @@index([dreamId])

@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import Sidebar from '@/components/ui/Sidebar';
 import CloudBackground from '@/components/layout/Cloudbackground';
-import LayoutWrapper from '@/components/layout/LayoutWrapper';
 import './globals.css';
 import TopInsights from '@/components/TopInsights';
 import { Toaster } from 'sonner';
@@ -22,11 +21,11 @@ export default function RootLayout({
         <CloudBackground />
         <div className="flex min-h-screen">
           <Sidebar />
-          <LayoutWrapper>
+          <main className="flex-1 ml-20 lg:ml-64 relative z-10">
             {children}
             <TopInsights />
             <Toaster richColors position="top-right" />
-          </LayoutWrapper>
+          </main>
         </div>
       </body>
     </html>

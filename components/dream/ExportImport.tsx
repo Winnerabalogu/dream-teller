@@ -3,11 +3,13 @@
 import { useState, useRef } from 'react';
 import { Download, Upload, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { exportDreamsData, importDreamsData } from '@/services/dream.service';
-import { useDreamContext } from '@/context/DreamContext';
+import { exportDreamsData, importDreamsData } from '@/services/db';
+import { useDreams } from '@/hooks/useDreams';
+import { useSymbols } from '@/hooks/useSymbols';
 
 export default function ExportImport() {
-  const { refetchAll } = useDreamContext();
+  const { refetch: refetchDreams } = useDreams();
+  const { refetch: refetchSymbols } = useSymbols();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -31,7 +33,7 @@ export default function ExportImport() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      toast.success(`Exported ${data.metadata?.dreamCount || 0} dreams and ${data.metadata?.symbolCount || 0} symbols`);
+      toast.success(`Exported ${data.dreams?.length || 0} dreams and ${data.symbols?.length || 0} symbols`);
     } catch (error) {
       console.error('Export failed:', error);
       toast.error(
@@ -62,12 +64,14 @@ export default function ExportImport() {
         );
       }
 
-      const result = await importDreamsData(data);
+      await importDreamsData(data);
 
-      await refetchAll();
+      await Promise.all([refetchDreams(), refetchSymbols()]);
 
+      const dreamCount = data.dreams?.length || 0;
+      const symbolCount = data.symbols?.length || 0;
       toast.success(
-        `Imported ${result.imported.dreams} dreams and ${result.imported.symbols} symbols`
+        `Imported ${dreamCount} dreams and ${symbolCount} symbols`
       );
     } catch (error) {
       console.error('Import failed:', error);

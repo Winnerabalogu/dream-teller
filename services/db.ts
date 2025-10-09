@@ -1,25 +1,23 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { Dream, Symbol } from '@/lib/types';
+import { Dream, Symbol, Interpretation } from '@/lib/types';
 import { interpretDreamLocally } from '@/lib/utils';
 import { revalidatePath } from 'next/cache';
+import { Prisma } from '@prisma/client';
 
 export async function createDream(formData: FormData) {
   const text = formData.get('text') as string;
   if (!text.trim()) throw new Error('Dream text required');
 
   const symbols = await prisma.symbol.findMany();
-  // FIX: Cast Prisma symbols to our Symbol type
   const typedSymbols = symbols as Symbol[];
   const interpretation = interpretDreamLocally(text, typedSymbols);
 
   const dream = await prisma.dream.create({
     data: {
       text,
-      // FIX: Prisma accepts interpretation as JsonValue; we need to cast
-      interpretation: interpretation as any,
+      interpretation: interpretation as unknown as Prisma.InputJsonValue,
     },
     select: {
       id: true,
@@ -123,7 +121,6 @@ export async function exportDreamsData() {
   return { dreams, symbols };
 }
 
-// FIX: Accept Dream and Symbol objects directly, handle null insight
 export async function importDreamsData(data: {
   dreams: Dream[];
   symbols: Symbol[];
@@ -154,16 +151,21 @@ export async function importDreamsData(data: {
       where: { id: dream.id },
       update: {
         text: dream.text,
-        interpretation: dream.interpretation as any,
+        interpretation: dream.interpretation as unknown as Prisma.InputJsonValue,
       },
       create: {
         id: dream.id,
         text: dream.text,
-        interpretation: dream.interpretation as any,
+        interpretation: dream.interpretation as unknown as Prisma.InputJsonValue,
         date: dream.date,
       },
     });
   }
 
+  revalidatePath('/');
+}
+
+export async function deleteSymbol(id: number) {
+  await prisma.symbol.delete({ where: { id } });
   revalidatePath('/');
 }

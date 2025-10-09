@@ -131,26 +131,41 @@ export function interpretDream(text: string, symbols: Symbol[]): Interpretation 
   };
 }
 
-// Helper: Analyze patterns across multiple interpretations
+// Helper: Analyze patterns across multiple interpretations with intelligent pattern detection
 export function analyzeRecurringPatterns(interpretations: Interpretation[]) {
-  if (interpretations.length < 3) {
+  if (interpretations.length === 0) {
     return {
       insights: [],
       symbolFreq: {},
       themeFreq: {},
       correlations: [],
+      trends: [],
+      emotionalPattern: null,
     };
   }
 
   const symbolFreq: Record<string, number> = {};
   const themeFreq: Record<string, number> = {};
+  const symbolThemeMap: Record<string, Record<string, number>> = {};
   const insights: string[] = [];
+  const trends: string[] = [];
 
+  // Build frequency maps and correlations
   interpretations.forEach(interp => {
     interp.symbols.forEach(s => {
-      const key = s.symbol.toLowerCase();
-      symbolFreq[key] = (symbolFreq[key] || 0) + 1;
+      const symbolKey = s.symbol.toLowerCase();
+      symbolFreq[symbolKey] = (symbolFreq[symbolKey] || 0) + 1;
+
+      // Track which themes appear with which symbols
+      if (!symbolThemeMap[symbolKey]) {
+        symbolThemeMap[symbolKey] = {};
+      }
+      interp.mainThemes.forEach(theme => {
+        const themeKey = theme.toLowerCase();
+        symbolThemeMap[symbolKey][themeKey] = (symbolThemeMap[symbolKey][themeKey] || 0) + 1;
+      });
     });
+
     interp.mainThemes.forEach(t => {
       themeFreq[t.toLowerCase()] = (themeFreq[t.toLowerCase()] || 0) + 1;
     });
@@ -158,39 +173,133 @@ export function analyzeRecurringPatterns(interpretations: Interpretation[]) {
 
   const total = interpretations.length;
 
-  // Find top symbol
-  const topSymbol = Object.entries(symbolFreq).sort((a, b) => b[1] - a[1])[0];
-  if (topSymbol && topSymbol[1] / total >= 0.3) {
+  // Analyze symbol patterns with different thresholds
+  const sortedSymbols = Object.entries(symbolFreq).sort((a, b) => b[1] - a[1]);
+
+  // Very frequent symbols (>30%)
+  const dominantSymbols = sortedSymbols.filter(([, count]) => count / total >= 0.3);
+  if (dominantSymbols.length > 0) {
+    dominantSymbols.forEach(([symbol, count]) => {
+      const percentage = Math.round((count / total) * 100);
+      insights.push(
+        `"${symbol}" is a dominant symbol, appearing in ${percentage}% of your dreams. This represents a core theme in your subconscious mind.`
+      );
+    });
+  }
+
+  // Moderately recurring symbols (15-30%)
+  const recurringSymbols = sortedSymbols.filter(([, count]) => {
+    const freq = count / total;
+    return freq >= 0.15 && freq < 0.3;
+  });
+  if (recurringSymbols.length > 0 && interpretations.length >= 5) {
+    const symbolList = recurringSymbols.slice(0, 3).map(([s]) => s).join(', ');
     insights.push(
-      `"${topSymbol[0]}" appears in ${Math.round((topSymbol[1] / total) * 100)}% of your dreams. This recurring symbol holds significant meaning in your subconscious.`
+      `Recurring symbols include: ${symbolList}. These patterns suggest developing themes worth exploring.`
     );
   }
 
-  // Find dominant theme
-  const topTheme = Object.entries(themeFreq).sort((a, b) => b[1] - a[1])[0];
-  if (topTheme && topTheme[1] / total >= 0.4) {
+  // Emerging patterns (appearing 2-3 times in recent dreams)
+  if (interpretations.length >= 5) {
+    const recentSymbols: Record<string, number> = {};
+    interpretations.slice(-5).forEach(interp => {
+      interp.symbols.forEach(s => {
+        const key = s.symbol.toLowerCase();
+        recentSymbols[key] = (recentSymbols[key] || 0) + 1;
+      });
+    });
+
+    const emergingSymbols = Object.entries(recentSymbols)
+      .filter(([symbol, count]) => count >= 2 && (!symbolFreq[symbol] || symbolFreq[symbol] <= count + 1))
+      .map(([symbol]) => symbol);
+
+    if (emergingSymbols.length > 0) {
+      trends.push(
+        `Emerging pattern: ${emergingSymbols.slice(0, 3).join(', ')} appearing in recent dreams, indicating new developments.`
+      );
+    }
+  }
+
+  // Analyze theme patterns
+  const sortedThemes = Object.entries(themeFreq).sort((a, b) => b[1] - a[1]);
+  const dominantTheme = sortedThemes[0];
+
+  if (dominantTheme && dominantTheme[1] / total >= 0.4) {
     insights.push(
-      `The theme of "${topTheme[0]}" dominates your dream landscape, suggesting this area deserves your attention and reflection.`
+      `The theme of "${dominantTheme[0]}" dominates (${Math.round((dominantTheme[1] / total) * 100)}%), suggesting focused attention is needed in this area.`
     );
   }
 
-  // Find correlations
+  // Find meaningful symbol-theme correlations
   const correlations: string[] = [];
-  Object.entries(symbolFreq)
-    .filter(([_, count]) => count >= 2)
-    .slice(0, 3)
-    .forEach(([symbol]) => {
-      const relatedTheme = Object.entries(themeFreq).sort((a, b) => b[1] - a[1])[0];
-      if (relatedTheme) {
-        correlations.push(`${symbol} often appears alongside themes of ${relatedTheme[0]}`);
+  Object.entries(symbolThemeMap)
+    .filter(([symbol]) => symbolFreq[symbol] >= 2)
+    .slice(0, 5)
+    .forEach(([symbol, themes]) => {
+      const strongestTheme = Object.entries(themes)
+        .sort((a, b) => b[1] - a[1])[0];
+
+      if (strongestTheme) {
+        const coOccurrence = strongestTheme[1];
+        const symbolTotal = symbolFreq[symbol];
+
+        // Only report strong correlations (>60% co-occurrence)
+        if (coOccurrence / symbolTotal >= 0.6) {
+          correlations.push(
+            `"${symbol}" correlates with ${strongestTheme[0]} (${Math.round((coOccurrence / symbolTotal) * 100)}%)`
+          );
+        }
       }
     });
+
+  // Analyze emotional patterns
+  let emotionalPattern = null;
+  if (interpretations.length >= 3) {
+    const recentEmotions = interpretations.slice(-3).map(i => i.emotionalTone.toLowerCase());
+    const hasAnxiety = recentEmotions.some(e => e.includes('anxious') || e.includes('tension'));
+    const hasJoy = recentEmotions.some(e => e.includes('joy') || e.includes('uplifting'));
+
+    if (hasAnxiety && !hasJoy) {
+      emotionalPattern = 'anxious';
+      trends.push('Recent dreams show heightened anxiety. Consider stress management practices.');
+    } else if (hasJoy && !hasAnxiety) {
+      emotionalPattern = 'positive';
+      trends.push('Recent dreams reflect positive emotional states and growth.');
+    } else if (hasAnxiety && hasJoy) {
+      emotionalPattern = 'mixed';
+      trends.push('Dreams show emotional complexity, balancing growth with challenges.');
+    }
+  }
+
+  // Detect symbol evolution
+  if (interpretations.length >= 6) {
+    const earlySymbols = new Set<string>();
+    const lateSymbols = new Set<string>();
+    const splitPoint = Math.floor(interpretations.length / 2);
+
+    interpretations.slice(0, splitPoint).forEach(interp => {
+      interp.symbols.forEach(s => earlySymbols.add(s.symbol.toLowerCase()));
+    });
+
+    interpretations.slice(splitPoint).forEach(interp => {
+      interp.symbols.forEach(s => lateSymbols.add(s.symbol.toLowerCase()));
+    });
+
+    const newSymbols = Array.from(lateSymbols).filter(s => !earlySymbols.has(s));
+    if (newSymbols.length > 0) {
+      trends.push(
+        `New symbols: ${newSymbols.slice(0, 3).join(', ')} — representing evolving inner themes.`
+      );
+    }
+  }
 
   return {
     insights,
     symbolFreq,
     themeFreq,
     correlations,
+    trends,
+    emotionalPattern,
   };
 }
 

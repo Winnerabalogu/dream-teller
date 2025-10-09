@@ -22,23 +22,44 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'patterns' | 'input' | 'history' | 'dictionary'>('input');
 
   const { dreams, refetch: refetchDreams, patterns } = useDreams();
-  const { symbols, refetch: refetchSymbols } = useSymbols();
+  const { symbols, refetch: refetchSymbols, deleteSymbol } = useSymbols();
 
   useEffect(() => {
     if (interpretation) {
       setIsAnimating(true);
       const timer = setTimeout(() => setIsAnimating(false), 1000);
-      refetchDreams();
-      refetchSymbols();
       return () => clearTimeout(timer);
     }
-  }, [interpretation, refetchDreams, refetchSymbols]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interpretation]);
 
   const handleInterpret = async (text: string) => {
     if (!text.trim()) return;
+    setError(null);
+
     try {
+      // Interpret dream locally first
       const interp = interpretDreamLocally(text, symbols);
       setInterpretation(interp);
+
+      // Save to database
+      const formData = new FormData();
+      formData.append('text', text);
+
+      const response = await fetch('/api/interpret', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save dream');
+      }
+
+      // Refetch dreams to update history
+      await refetchDreams();
     } catch (err) {
       console.error(err);
       setError('Interpretation hiccup—add more details!');
@@ -242,7 +263,11 @@ export default function Home() {
                     </div>
                     <button
                       className="text-red-300 hover:text-red-400 transition"
-                      onClick={() => console.log('Delete', symbol.id)}
+                      onClick={async () => {
+                        if (confirm(`Delete "${symbol.key}"?`)) {
+                          await deleteSymbol(symbol.id);
+                        }
+                      }}
                     >
                       Delete
                     </button>

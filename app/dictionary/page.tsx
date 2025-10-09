@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import { useDreamContext } from '@/context/DreamContext';
+import { useSymbols } from '@/hooks/useSymbols';
 import { useState, useMemo } from 'react';
 import { BookOpen, Search, Loader2, Sparkles, Cloud } from 'lucide-react';
 import debounce from 'lodash.debounce';
@@ -21,7 +20,7 @@ function highlight(text: string, query: string) {
 }
 
 export default function DictionaryPage() {
-  const { symbols, loading } = useDreamContext();
+  const { symbols, loading } = useSymbols();
   const [query, setQuery] = useState('');
   const [q, setQ] = useState('');
 

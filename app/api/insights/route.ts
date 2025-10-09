@@ -1,7 +1,7 @@
 // src/app/api/insights/route.ts
 import { NextResponse } from 'next/server';
 import { getDreams } from '@/services/db';
-import { analyzeRecurringPatterns, sentimentScore } from '@/lib/analysis';
+import { analyzeRecurringPatterns, sentimentScore } from '@/lib/interpretation';
 
 export async function GET() {
   try {

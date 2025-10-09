@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Symbol } from '@/lib/types';
+import { toast } from 'sonner';
 
 export function useSymbols() {
   const [symbols, setSymbols] = useState<Symbol[]>([]);
@@ -13,11 +14,11 @@ export function useSymbols() {
       setLoading(true);
       setError(null);
       const res = await fetch('/api/symbols', { cache: 'no-store' });
-      
+
       if (!res.ok) {
         throw new Error('Failed to fetch symbols');
       }
-      
+
       const data = await res.json();
       setSymbols(data);
     } catch (err) {
@@ -25,6 +26,24 @@ export function useSymbols() {
       console.error('Error fetching symbols:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deleteSymbol = async (id: number) => {
+    try {
+      const res = await fetch(`/api/symbols/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to delete symbol');
+      }
+
+      toast.success('Symbol deleted successfully');
+      await fetchSymbols();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete symbol');
+      console.error('Error deleting symbol:', err);
     }
   };
 
@@ -37,5 +56,6 @@ export function useSymbols() {
     loading,
     error,
     refetch: fetchSymbols,
+    deleteSymbol,
   };
 }

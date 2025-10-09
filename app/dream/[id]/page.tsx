@@ -1,19 +1,16 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getDream, getDreams } from '@/services/db';
-import dynamic from 'next/dynamic';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import ReflectionForm from '@/components/dream/ReflectionForm';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
 import DeleteButton from '@/components/dream/DeleteButton';
-import {  JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, Suspense } from 'react';
+import InterpretationDisplay from '@/components/dream/InterpretationDisplay';
 import { getReflectionsForDream } from '@/services/reflection.service';
 
-const InterpretationDisplay = dynamic(() => import('@/components/dream/InterpretationDisplay'), { ssr: false });
-
-export default async function DreamPage({ params }: { params: { id: string } }) {
-  const dream = await getDream(params.id);
+export default async function DreamPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const dream = await getDream(id);
   if (!dream) return notFound();
   const reflections = await getReflectionsForDream(dream.id);
   // find previous and next
@@ -48,9 +45,7 @@ export default async function DreamPage({ params }: { params: { id: string } }) 
           </div>
         </div>
 
-        <Suspense fallback={<div className="text-purple-300">Loading interpretation…</div>}>
-          <InterpretationDisplay interpretation={dream.interpretation} />
-        </Suspense>
+        <InterpretationDisplay interpretation={dream.interpretation} />
 
         {/* Reflect prompt */}
        <div className="card">
@@ -63,7 +58,7 @@ export default async function DreamPage({ params }: { params: { id: string } }) 
             {reflections.length === 0 ? (
               <p className="text-sm text-purple-300 italic">No reflections yet — write one below.</p>
             ) : (
-              reflections.map((r: { id: Key | null | undefined; createdAt: string | number | Date; text: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; }) => (
+              reflections.map((r) => (
                 <div key={r.id} className="bg-white/5 p-3 rounded-lg border border-white/10">
                   <div className="text-xs text-purple-300 mb-1">
                     {new Date(r.createdAt).toLocaleString()}

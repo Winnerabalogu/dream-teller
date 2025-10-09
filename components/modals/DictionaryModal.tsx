@@ -4,14 +4,13 @@ import { useState } from 'react';
 import { updateSymbol } from '@/services/db';
 import type { Symbol } from '@/lib/types';
 import { useSymbols } from '@/hooks/useSymbols';
-import { deleteSymbol } from '@/services/Symbol.service';
 
 interface Props {
   onClose: () => void;
 }
 
 export default function DictionaryModal({ onClose }: Props) {
-  const { symbols, refetch } = useSymbols(); 
+  const { symbols, refetch, deleteSymbol } = useSymbols(); 
   const [editId, setEditId] = useState<number | null>(null);
   const [key, setKey] = useState('');
   const [meaning, setMeaning] = useState('');

@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// src/app/api/patterns/route.ts
 import { NextResponse } from 'next/server';
 import { getDreams } from '@/services/db';
+import type { Dream } from '@/lib/types';
 
 // Utility to find frequency of items in an array
 function countOccurrences(items: string[]): Record<string, number> {
@@ -14,12 +13,14 @@ function countOccurrences(items: string[]): Record<string, number> {
 }
 
 // Identify recurring symbols (20%+ frequency threshold)
-function findRecurringSymbols(dreams: { text: string; interpretation: any }[]) {
+function findRecurringSymbols(dreams: Dream[]) {
   const allSymbols: string[] = [];
 
   for (const dream of dreams) {
-    if (dream.interpretation?.symbols) {
-      allSymbols.push(...dream.interpretation.symbols);
+    if (dream.interpretation?.symbols && Array.isArray(dream.interpretation.symbols)) {
+      // Extract symbol names from {symbol, meaning} objects
+      const symbolNames = dream.interpretation.symbols.map(s => s.symbol);
+      allSymbols.push(...symbolNames);
     }
   }
 
@@ -32,12 +33,12 @@ function findRecurringSymbols(dreams: { text: string; interpretation: any }[]) {
 }
 
 // Identify dominant emotional or thematic patterns
-function findThemes(dreams: { interpretation: any }[]) {
+function findThemes(dreams: Dream[]) {
   const themes: string[] = [];
 
   for (const dream of dreams) {
-    if (dream.interpretation?.themes) {
-      themes.push(...dream.interpretation.themes);
+    if (dream.interpretation?.mainThemes && Array.isArray(dream.interpretation.mainThemes)) {
+      themes.push(...dream.interpretation.mainThemes);
     }
   }
 
