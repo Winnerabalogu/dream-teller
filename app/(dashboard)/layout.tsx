@@ -1,3 +1,4 @@
+// app/(dashboard)/layout.tsx
 import type React from "react"
 import Sidebar from "@/components/layout/Sidebar"
 import CloudBackground from "@/components/layout/Cloudbackground"
@@ -8,6 +9,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
+  // REMOVED the auth check - let everyone access dashboard for now
   return (
     <>
       <CloudBackground />

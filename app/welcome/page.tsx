@@ -48,6 +48,7 @@ const morningMessages = {
 
 export default function WelcomePage() {
   const [isLoading, setIsLoading] = useState(true)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [selectedMessage, setSelectedMessage] = useState("")
   const [step, setStep] = useState(0)
   const [userChoice, setUserChoice] = useState<string>("")
@@ -55,13 +56,27 @@ export default function WelcomePage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Simple loading timer - no API calls
-    const timer = setTimeout(() => {
+    const fetchUserProfile = async () => {
+      if (session?.user?.email) {
+        try {
+          const res = await fetch("/api/user/profile")
+          if (res.ok) {
+            const profile = await res.json()
+            setUserProfile(profile)
+          }
+        } catch (error) {
+          console.error("Failed to fetch profile:", error)
+        }
+      }
       setIsLoading(false)
-    }, 6500)
+    }
+
+    const timer = setTimeout(() => {
+      fetchUserProfile()
+    }, 7000)
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [session])
 
   useEffect(() => {
     const getTimeOfDay = () => {
@@ -164,7 +179,7 @@ export default function WelcomePage() {
               <h1 className="text-4xl md:text-6xl lg:text-7xl font-light text-white leading-tight">
                 {greeting.text},{" "}
                 <span className="font-normal bg-gradient-to-r from-amber-200 via-rose-200 to-purple-200 bg-clip-text text-transparent">
-                  {session?.user?.name || "there"}
+                  {userProfile?.name || "there"}
                 </span>
               </h1>
             </motion.div>
@@ -260,7 +275,7 @@ export default function WelcomePage() {
             </motion.div>
 
             {/* Spiritual profile hint */}
-            {step === 0 && (
+            {userProfile && !userProfile.starSign && step === 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
