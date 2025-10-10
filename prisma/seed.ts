@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { PrismaClient } from '@prisma/client';
 import chalk from 'chalk';
@@ -612,6 +613,29 @@ async function main() {
   }
 
   console.log(chalk.green(`✅ Seeded ${symbols.length} dream symbols successfully!`));
+
+  // Seed default user
+  console.log(chalk.cyan('\n➡️  Creating default user...'));
+  const bcrypt = require('bcryptjs');
+  const hashedPassword = await bcrypt.hash('password123', 12);
+
+  await prisma.user.upsert({
+    where: { email: 'aeterna@dream.com' },
+    update: {},
+    create: {
+      email: 'aeterna@dream.com',
+      password: hashedPassword,
+      name: 'Aeterna',
+      starSign: 'Pisces',
+      spiritType: 'Water',
+      energyType: 'Intuitive',
+      birthDate: new Date('1990-03-15'),
+    },
+  });
+
+  console.log(chalk.green('✅ Default user created successfully!'));
+  console.log(chalk.blue('   📧 Email: aeterna@dream.com'));
+  console.log(chalk.blue('   🔑 Password: password123'));
   console.log(chalk.yellow('\n🌙 Dream insight database ready.\n'));
 }
 

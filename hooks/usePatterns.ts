@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// hooks/usePatterns.ts
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,6 +6,10 @@ import { useState, useEffect } from 'react';
 export interface PatternData {
   recurringSymbols: Record<string, number>;
   themeFrequency: Record<string, number>;
+  totalDreams?: number;
+  insights?: string[];
+  emotionalTrend?: Array<{ date: string; tone: string }>;
+  emotionalPattern?: string | null;
 }
 
 export function usePatterns() {
@@ -20,13 +24,14 @@ export function usePatterns() {
   const fetchPatterns = async () => {
     try {
       setLoading(true);
+      setError(null);
       const res = await fetch('/api/patterns');
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
       const data = await res.json();
       setPatterns(data);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Pattern fetch error:', err);
-      setError(err.message ?? 'Failed to load patterns');
+      setError(err instanceof Error ? err.message : 'Failed to load patterns');
     } finally {
       setLoading(false);
     }

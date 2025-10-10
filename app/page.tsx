@@ -1,320 +1,281 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-'use client';
+"use client"
 
-import { useState, useEffect } from 'react';
-import { History, Database, Edit3, Sparkles, Plus, Cloud, Zap, BookOpen } from 'lucide-react';
-import { useDreams } from '@/hooks/useDreams';
-import { useSymbols } from '@/hooks/useSymbols';
-import { interpretDreamLocally } from '@/lib/utils';
-import DreamInput from '@/components/ui/DreamInput';
-import Interpretation from '@/components/dream/Interpretation';
-import ExportImport from '@/components/dream/ExportImport';
-import DictionaryModal from '@/components/modals/DictionaryModal';
-import Tabs from '@/components/ui/Tabs';
-import SearchBar from '@/components/dream/SearchBar';
-import type { Tab } from '@/components/ui/Tabs';
+import { motion, useAnimation, useMotionValue, useTransform } from "framer-motion"
+import { useEffect, useMemo, useState } from "react"
+import type React from "react"
+import { useRouter } from "next/navigation"
 
-export default function Home() {
-  const [interpretation, setInterpretation] = useState<any>(null);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [showDictionaryModal, setShowDictionaryModal] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'patterns' | 'input' | 'history' | 'dictionary'>('input');
+const goldenRatio = 1.618033988749895
 
-  const { dreams, refetch: refetchDreams, patterns } = useDreams();
-  const { symbols, refetch: refetchSymbols, deleteSymbol } = useSymbols();
+const fibonacciSpiral = (centerX: number, centerY: number, size: number, rotation: number) => {
+  let path = `M${centerX},${centerY} `
+  let currentSize = size
+  let currentAngle = rotation
+
+  for (let i = 0; i < 8; i++) {
+    const endX = centerX + Math.cos(currentAngle) * currentSize
+    const endY = centerY + Math.sin(currentAngle) * currentSize
+    path += `A${currentSize},${currentSize} 0 0 1 ${endX},${endY} `
+    currentSize /= goldenRatio
+    currentAngle += Math.PI / 2
+  }
+
+  return path
+}
+
+const inspirationalMessages = [
+  "Every dream is a doorway to understanding yourself",
+  "Your subconscious speaks in symbols and stories",
+  "Dreams are the whispers of your soul",
+  "In dreams, we find truths we hide from ourselves",
+  "The night reveals what the day conceals",
+  "Your dreams hold the keys to your deepest wisdom",
+  "Listen to your dreams, they know you best",
+  "Dreams are letters from your inner self",
+]
+
+export default function HomePage() {
+  const router = useRouter()
+  const centerX = 150
+  const centerY = 150
+  const initialPath = useMemo(() => fibonacciSpiral(centerX, centerY, 120, 0), [])
+
+  const spiralControls = useAnimation()
+  const particleControls = useAnimation()
+  const [isHovered, setIsHovered] = useState(false)
+  const [inspirationalMessage] = useState(
+    () => inspirationalMessages[Math.floor(Math.random() * inspirationalMessages.length)],
+  )
+
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
+
+  const rotateX = useTransform(mouseY, [0, 300], [5, -5])
+  const rotateY = useTransform(mouseX, [0, 300], [-5, 5])
 
   useEffect(() => {
-    if (interpretation) {
-      setIsAnimating(true);
-      const timer = setTimeout(() => setIsAnimating(false), 1000);
-      return () => clearTimeout(timer);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interpretation]);
-
-  const handleInterpret = async (text: string) => {
-    if (!text.trim()) return;
-    setError(null);
-
-    try {
-      // Interpret dream locally first
-      const interp = interpretDreamLocally(text, symbols);
-      setInterpretation(interp);
-
-      // Save to database
-      const formData = new FormData();
-      formData.append('text', text);
-
-      const response = await fetch('/api/interpret', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save dream');
+    const animateSpiral = async () => {
+      while (true) {
+        await spiralControls.start({
+          pathLength: [0, 1],
+          transition: { duration: 4, ease: "easeInOut" },
+        })
+        await spiralControls.start({
+          pathLength: 1,
+          transition: { duration: 2 },
+        })
       }
-
-      // Refetch dreams to update history
-      await refetchDreams();
-    } catch (err) {
-      console.error(err);
-      setError('Interpretation hiccup—add more details!');
     }
-  };
 
-  const tabs = [
-    { id: 'input', label: 'Interpret', icon: Sparkles },
-    { id: 'history', label: 'History', icon: History },
-    { id: 'patterns', label: 'Patterns', icon: Database },
-    { id: 'dictionary', label: 'Dictionary', icon: Edit3 },
-  ] as const satisfies Tab<'patterns' | 'input' | 'history' | 'dictionary'>[];
+    const animateRotation = async () => {
+      await spiralControls.start({
+        rotate: 360,
+        transition: { duration: 20, ease: "linear", repeat: Number.POSITIVE_INFINITY },
+      })
+    }
+
+    const animateParticles = async () => {
+      await particleControls.start({
+        opacity: [0, 1],
+        transition: { duration: 1, staggerChildren: 0.1 },
+      })
+      particleControls.start({
+        opacity: [1, 0.7, 1],
+        transition: { duration: 3, repeat: Number.POSITIVE_INFINITY, repeatType: "reverse" },
+      })
+    }
+
+    animateSpiral()
+    animateRotation()
+    animateParticles()
+  }, [spiralControls, particleControls])
+
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    mouseX.set(event.clientX - rect.left)
+    mouseY.set(event.clientY - rect.top)
+  }
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      
-         {/* Floating clouds */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="cloud cloud-1"></div>
-        <div className="cloud cloud-2"></div>
-        <div className="cloud cloud-3"></div>
-        <div className="cloud cloud-4"></div>
-        <div className="cloud cloud-5"></div>
-      </div>
-      
-      {/* Content */}
-      <div className="relative z-10">
-        
-        <div className="max-w-4xl mx-auto px-6 pb-16">
-          {/* Header */}
-          <header className="text-center mb-12 pt-8 animate-fade-in">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <Sparkles className="w-8 h-8 text-purple-300 animate-pulse" />
-              <h1 className="text-5xl md:text-6xl font-light tracking-tight text-gradient">
-                Dream Tale
-              </h1>
-              <Cloud className="w-8 h-8 text-blue-300 animate-pulse" />
-            </div>
-            <p className="text-purple-200 text-lg md:text-xl font-light opacity-90 max-w-2xl mx-auto">
-              Explore your subconscious mind. Discover hidden patterns. Unlock personal insights.
-            </p>
-          </header>
+    <div className="flex flex-col items-center justify-center w-full min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-rose-950 overflow-hidden p-4">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-900/20 via-purple-950/50 to-black opacity-70"></div>
 
-          {/* Tabs */}
-          <div className="mb-8">
-            <Tabs
-              tabs={tabs}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-            />
-          </div>
+      {/* Responsive background dots */}
+      {[...Array(40)].map((_, index) => (
+        <motion.div
+          key={`dot-${index}`}
+          className="absolute w-1 h-1 bg-amber-200/60 rounded-full"
+          style={{
+            top: `${Math.random() * 100}%`,
+            left: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            opacity: [0.2, 0.5, 0.2],
+            scale: [1, 1.2, 1],
+          }}
+          transition={{
+            duration: Math.random() * 2 + 1,
+            repeat: Number.POSITIVE_INFINITY,
+            repeatType: "reverse",
+          }}
+          whileHover={{
+            opacity: 0.8,
+            scale: 1.5,
+            transition: { duration: 0.3 },
+          }}
+        />
+      ))}
 
-          {/* Export/Import */}
-          {activeTab === 'input' && (
-            <div className="flex justify-center space-x-4 mb-6">
-              <ExportImport />
-            </div>
-          )}
+      <motion.div
+        className="relative w-[300px] h-[300px] cursor-pointer"
+        style={{ perspective: 1000, rotateX, rotateY }}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        transition={{ type: "spring", stiffness: 100, damping: 30 }}
+      >
+        <svg width="300" height="300" viewBox="0 0 300 300" className="relative z-10">
+          <defs>
+            <linearGradient id="spiralGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#F59E0B">
+                <animate
+                  attributeName="stop-color"
+                  values="#F59E0B; #EC4899; #A855F7; #F59E0B"
+                  dur="10s"
+                  repeatCount="indefinite"
+                />
+              </stop>
+              <stop offset="50%" stopColor="#EC4899">
+                <animate
+                  attributeName="stop-color"
+                  values="#EC4899; #A855F7; #F59E0B; #EC4899"
+                  dur="10s"
+                  repeatCount="indefinite"
+                />
+              </stop>
+              <stop offset="100%" stopColor="#A855F7">
+                <animate
+                  attributeName="stop-color"
+                  values="#A855F7; #F59E0B; #EC4899; #A855F7"
+                  dur="10s"
+                  repeatCount="indefinite"
+                />
+              </stop>
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3.5" result="coloredBlur" />
+              <feMerge>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
 
-          {/* Tab Content */}
-          {activeTab === 'input' && (
-            <>
-              <DreamInput onInterpret={handleInterpret} error={error} />
-              {interpretation && (
-                <div className={`space-y-6 transition-all mt-8 ${isAnimating ? 'animate-fade-in' : ''}`}>
-                  <Interpretation interpretation={interpretation} />
-                </div>
-              )}
+          {/* Fibonacci spiral */}
+          <motion.path
+            d={initialPath}
+            stroke="url(#spiralGradient)"
+            strokeWidth="4"
+            fill="none"
+            filter="url(#glow)"
+            initial={{ pathLength: 0, rotate: 0 }}
+            animate={spiralControls}
+            style={{ originX: "150px", originY: "150px" }}
+          />
 
-              {/* Info Cards */}
-              {!interpretation && (
-                <div className="grid md:grid-cols-3 gap-4 mt-12 animate-slide-up">
-                  {[
-                    { icon: <Sparkles className="w-5 h-5" />, title: 'Instant Insights', desc: 'AI-powered dream analysis' },
-                    { icon: <BookOpen className="w-5 h-5" />, title: 'Symbol Dictionary', desc: 'Personal interpretation library' },
-                    { icon: <Zap className="w-5 h-5" />, title: 'Pattern Recognition', desc: 'Track recurring themes' },
-                  ].map((card, i) => (
-                    <div
-                      key={i}
-                      className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-all hover:bg-white/10 group cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2 bg-purple-500/20 rounded-lg group-hover:bg-purple-500/30 transition-colors">
-                          <div className="text-purple-300">{card.icon}</div>
-                        </div>
-                        <h3 className="font-medium text-purple-100">{card.title}</h3>
-                      </div>
-                      <p className="text-purple-300 text-sm font-light">{card.desc}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
+          {/* Particles */}
+          {[...Array(12)].map((_, index) => {
+            const angle = (index / 12) * Math.PI * 2
+            const radius = 100 + (index % 3) * 20
+            return (
+              <motion.circle
+                key={index}
+                cx={centerX + Math.cos(angle) * radius}
+                cy={centerY + Math.sin(angle) * radius}
+                r="4"
+                fill="#FDE68A"
+                initial={{ opacity: 0 }}
+                animate={particleControls}
+              />
+            )
+          })}
 
-          {activeTab === 'history' && (
-            <section className="space-y-4 animate-fade-in">
-              <h2 className="text-2xl font-light mb-4">
-                Dream History ({dreams.length})
-              </h2>
-              {dreams.length === 0 ? (
-                <div className="card text-center py-12">
-                  <p className="text-purple-300">No dreams yet—start interpreting!</p>
-                </div>
-              ) : (
-                dreams.map((dream) => (
-                  <article
-                    key={dream.id}
-                    className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all"
-                  >
-                    <div className="text-sm text-purple-300 mb-2">
-                      {new Date(dream.date).toLocaleDateString()}
-                    </div>
-                    <p className="text-purple-200 mb-3 italic">
-                      &quot;{dream.text.substring(0, 100)}&hellip;&quot;
-                    </p>
-                    <details className="text-sm">
-                      <summary className="cursor-pointer text-blue-300 hover:text-blue-200">
-                        View Interpretation
-                      </summary>
-                      <div className="mt-2 text-indigo-200">
-                        <Interpretation interpretation={dream.interpretation} />
-                      </div>
-                    </details>
-                  </article>
-                ))
-              )}
-            </section>
-          )}
+          {/* Central pulsating dot */}
+          <motion.circle
+            cx={centerX}
+            cy={centerY}
+            r="8"
+            fill="#FDE68A"
+            animate={{
+              opacity: [1, 0.7, 1],
+              scale: isHovered ? [1, 1.1, 1] : 1,
+            }}
+            transition={{ repeat: Number.POSITIVE_INFINITY, duration: 2, ease: "easeInOut" }}
+          />
 
-          {activeTab === 'patterns' && (
-            <section className="space-y-6 animate-fade-in">
-              <h2 className="text-2xl font-light mb-4">Subconscious Patterns</h2>
-              {dreams.length < 2 ? (
-                <div className="card text-center py-12">
-                  <p className="text-purple-300">Record 2+ dreams to spot patterns.</p>
-                </div>
-              ) : (
-                <>
-                  <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
-                    <h3 className="text-xl mb-4">Recurring Symbols (20%+ frequency)</h3>
-                    <ul className="space-y-2">
-                      {Object.entries(patterns.recurringSymbols).map(([sym, count]) => (
-                        <li key={sym} className="flex justify-between text-purple-200 py-2 border-b border-white/10 last:border-0">
-                          <span className="font-medium capitalize">{sym}</span>
-                          <span className="text-blue-300">
-                            {Math.round((Number(count) / dreams.length) * 100)}% ({Number(count)}x)
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10">
-                    <h3 className="text-xl mb-4">Dominant Themes</h3>
-                    <ul className="space-y-2">
-                      {Object.entries(patterns.themeFrequency).map(([theme, count]) => (
-                        <li key={theme} className="flex justify-between text-purple-200 py-2 border-b border-white/10 last:border-0">
-                          <span className="font-medium capitalize">{theme}</span>
-                          <span className="text-blue-300">
-                            {Math.round((Number(count) / dreams.length) * 100)}%
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </>
-              )}
-            </section>
-          )}
+          {/* Orbiting particle */}
+          <motion.circle
+            cx={centerX}
+            cy={centerY - 120}
+            r="4"
+            fill="#FDE68A"
+            animate={{
+              rotate: [0, 360],
+            }}
+            transition={{
+              duration: 10,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "linear",
+            }}
+            style={{
+              originX: "150px",
+              originY: "150px",
+            }}
+          />
+        </svg>
+      </motion.div>
 
-          {activeTab === 'dictionary' && (
-            <section className="space-y-6 animate-fade-in">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-light">
-                  Symbol Dictionary ({symbols.length})
-                </h2>
-                <button
-                  onClick={() => setShowDictionaryModal(true)}
-                  className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-4 py-2 rounded-lg transition-all font-medium"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add / Edit</span>
-                </button>
-              </div>
+      <motion.div
+        className="mt-12 text-center space-y-6 max-w-2xl px-6 relative z-10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1, duration: 1 }}
+      >
+        <h1 className="text-6xl md:text-7xl lg:text-8xl font-light text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-rose-200 to-purple-200">
+          {[..."Aeterna"].map((char, index) => (
+            <motion.span
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.5 + index * 0.1, duration: 0.5 }}
+              className="inline-block hover:text-amber-300 transition-colors duration-300"
+            >
+              {char}
+            </motion.span>
+          ))}
+        </h1>
 
-              {/* Integrated live search */}
-              <div className="max-w-xl mx-auto">
-                <SearchBar />
-              </div>
+        <motion.p
+          className="text-lg md:text-xl text-slate-300 font-light leading-relaxed italic"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 2.5, duration: 1 }}
+        >
+          {inspirationalMessage}
+        </motion.p>
 
-              {/* Scrollable list */}
-              <div className="grid gap-4 max-h-[500px] overflow-y-auto scrollbar-hide">
-                {symbols.map((symbol) => (
-                  <div
-                    key={symbol.id}
-                    className="bg-white/5 backdrop-blur-lg rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-all flex justify-between items-start"
-                  >
-                    <div>
-                      <h4 className="font-medium text-purple-300 capitalize">{symbol.key}</h4>
-                      <p className="text-purple-200 text-sm leading-relaxed">{symbol.meaning}</p>
-                    </div>
-                    <button
-                      className="text-red-300 hover:text-red-400 transition"
-                      onClick={async () => {
-                        if (confirm(`Delete "${symbol.key}"?`)) {
-                          await deleteSymbol(symbol.id);
-                        }
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              {showDictionaryModal && (
-                <DictionaryModal onClose={() => setShowDictionaryModal(false)} />
-              )}
-            </section>
-          )}
-        </div>
-      </div>
-
-      <style jsx>{`
-        .text-gradient {
-          background: linear-gradient(135deg, #c4b5fd 0%, #93c5fd 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        @keyframes blob {
-          0%, 100% {
-            transform: translate(0, 0) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-        }
-
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-      `}</style>
+        <motion.button
+          onClick={() => router.push("/auth/signin")}
+          className="mt-8 bg-gradient-to-r from-amber-500/90 to-rose-500/90 hover:from-amber-500 hover:to-rose-500 text-white font-normal px-12 py-5 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-2xl text-lg"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 3, duration: 0.8 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          Welcome
+        </motion.button>
+      </motion.div>
     </div>
-  );
+  )
 }

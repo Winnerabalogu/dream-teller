@@ -1,20 +1,19 @@
+// components/dream/SearchBar.tsx
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { Search, Loader2 } from 'lucide-react';
 import { searchDreams } from '@/services/db';
-import { Dream } from '@/lib/types';
-
+import { Dream, Interpretation } from '@/lib/types';
 interface SymbolItem {
   key: string;
   meaning: string;
 }
 
 interface SearchBarProps {
-  data?: SymbolItem[]; // optional for local filtering
+  data?: SymbolItem[];
 }
-
 export default function SearchBar({ data }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<(Dream | SymbolItem)[]>([]);
@@ -22,14 +21,11 @@ export default function SearchBar({ data }: SearchBarProps) {
 
   const handleSearch = async (value: string) => {
     setQuery(value);
-
-    // If local data (like symbols) is provided → use client-side filtering
     if (data) {
       if (value.trim().length < 2) {
         setResults([]);
         return;
       }
-
       const filtered = data.filter(
         (item) =>
           item.key.toLowerCase().includes(value.toLowerCase()) ||
@@ -38,8 +34,6 @@ export default function SearchBar({ data }: SearchBarProps) {
       setResults(filtered);
       return;
     }
-
-    // Otherwise → async search from DB (e.g. dreams)
     if (value.trim().length < 2) {
       setResults([]);
       return;
@@ -47,10 +41,16 @@ export default function SearchBar({ data }: SearchBarProps) {
 
     setSearching(true);
     try {
-      const dreams = await searchDreams(value);
-      setResults(dreams);
+      const dreams = await searchDreams(value);      
+      const typedDreams: Dream[] = dreams.map((dream) => ({
+        ...dream,
+        interpretation: dream.interpretation as unknown as Interpretation,
+        userId: dream.userId ?? undefined,
+      }));
+      setResults(typedDreams);
     } catch (error) {
       console.error('Search error:', error);
+      setResults([]);
     } finally {
       setSearching(false);
     }
@@ -100,6 +100,9 @@ export default function SearchBar({ data }: SearchBarProps) {
               >
                 <p className="text-sm text-purple-200 line-clamp-2">
                   {dream.text}
+                </p>
+                <p className="text-xs text-purple-400 mt-1">
+                  {new Date(dream.date).toLocaleDateString()}
                 </p>
               </Link>
             ))

@@ -13,7 +13,7 @@ export default function Interpretation({ interpretation }: Props) {
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/20">
         <h2 className="text-2xl font-light mb-4">Main Themes</h2>
         <div className="flex flex-wrap gap-3">
-          {mainThemes.map((theme, i) => (
+          {mainThemes.map((theme: string, i: number) => (
             <span key={i} className="bg-purple-500/30 px-4 py-2 rounded-full text-purple-200 border border-purple-400/30">
               {theme}
             </span>

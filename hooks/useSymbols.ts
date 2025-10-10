@@ -1,3 +1,4 @@
+// hooks/useSymbols.ts
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,7 +14,7 @@ export function useSymbols() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch('/api/symbols', { cache: 'no-store' });
+      const res = await fetch('/api/symbols');
 
       if (!res.ok) {
         throw new Error('Failed to fetch symbols');

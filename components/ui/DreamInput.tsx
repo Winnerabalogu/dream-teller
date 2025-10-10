@@ -6,6 +6,7 @@ import { Loader2, Sparkles } from 'lucide-react';
 interface DreamInputProps {
   onInterpret: (text: string) => Promise<void> | void;
   error?: string | null;
+  isLoading:boolean
 }
 
 export default function DreamInput({ onInterpret, error }: DreamInputProps) {

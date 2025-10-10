@@ -1,6 +1,5 @@
 import { Dream, DreamPattern } from '@/lib/types';
-// Import interpretation logic from dedicated module
-export { interpretDream as interpretDreamLocally } from '@/lib/interpretation';
+export { interpretDreamLocally as interpretDreamLocally } from '@/lib/interpretation';
 export function cn(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(' ');
 }
@@ -34,14 +33,16 @@ export function computePatterns(dreams: Dream[]): DreamPattern {
       const key = s.symbol.toLowerCase();
       symbolCounts[key] = (symbolCounts[key] || 0) + 1;
     });
-    dream.interpretation.mainThemes.forEach((t) => {
+    
+    // mainThemes is now string[]
+    dream.interpretation.mainThemes.forEach((t: string) => {
       const key = t.toLowerCase();
       themeCounts[key] = (themeCounts[key] || 0) + 1;
     });
   });
 
   const total = dreams.length;
-  const threshold = 0.2; // 20% frequency
+  const threshold = 0.2;
 
   return {
     recurringSymbols: Object.fromEntries(

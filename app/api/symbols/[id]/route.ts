@@ -1,22 +1,29 @@
+// src/app/api/symbols/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 import { deleteSymbol } from '@/services/db';
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: idStr } = await context.params;
-    const id = parseInt(idStr);
+    const session = await auth();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    if (isNaN(id)) {
+    const { id } = await params;
+    const symbolId = parseInt(id);
+
+    if (isNaN(symbolId)) {
       return NextResponse.json(
         { error: 'Invalid symbol ID' },
         { status: 400 }
       );
     }
 
-    await deleteSymbol(id);
+    await deleteSymbol(symbolId);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting symbol:', error);

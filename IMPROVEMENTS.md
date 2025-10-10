@@ -1,4 +1,4 @@
-# Dream Tale - Improvement Summary
+# Aeterna's Journal - Improvement Summary
 
 ## 🎉 All Critical Issues Resolved!
 
@@ -314,7 +314,7 @@ npm run db:studio
 
 ## **Conclusion**
 
-**Dream Tale** is now a production-ready application with:
+**Aeterna's Journal** is now a production-ready application with:
 - ✅ Clean, maintainable codebase
 - ✅ Type-safe operations
 - ✅ Proper data integrity

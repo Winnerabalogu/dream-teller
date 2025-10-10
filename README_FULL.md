@@ -1,4 +1,4 @@
-# Dream Tale ✨
+# Aeterna's Journal ✨
 
 > Your personal dream interpretation journal powered by local NLP analysis
 
@@ -385,6 +385,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ and ✨ by the Dream Tale team**
+**Built with ❤️ and ✨ by the Aeterna's Journal team**
 
-*"Every dream is a window to your inner world. Dream Tale helps you see what's beyond."*
+*"Every dream is a window to your inner world. Aeterna's Journal helps you see what's beyond."*

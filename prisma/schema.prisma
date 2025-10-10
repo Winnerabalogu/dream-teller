@@ -8,8 +8,75 @@ datasource db {
   url      = env("DATABASE_URL")  
 }
 
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Spiritual Profile
+  starSign      String?   // Zodiac sign
+  spiritType    String?   // e.g., "Earth", "Air", "Fire", "Water"
+  energyType    String?   // e.g., "Calm", "Active", "Balanced"
+  birthDate     DateTime?
+
+  // Relations
+  dreams        Dream[]
+  journals      JournalEntry[]
+  accounts      Account[]
+  sessions      Session[]
+  meditationLogs MeditationLog[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
 model Dream {
   id             String       @id @default(cuid())
+  userId         String?
+  user           User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
   date           DateTime     @default(now())
   text           String       @db.Text
   interpretation Json         // { mainThemes: string[], emotionalTone: string, symbols: {symbol: string, meaning: string}[], personalInsight: string, guidance: string }
@@ -18,12 +85,14 @@ model Dream {
   reflections    Reflection[]
 
   @@index([date])
+  @@index([userId])
   @@map("dreams")
 }
 
 model Symbol {
   id         Int      @id @default(autoincrement())
   key        String   @unique
+  userId         String?
   meaning    String   @db.Text
   insight    String?  @db.Text
   keywords   String[]
@@ -51,4 +120,185 @@ model Category {
   name        String     @unique
   description String?
   symbols     Symbol[]
+}
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String?
+  content   String   @db.Text
+  mood      String?  // e.g., "happy", "sad", "anxious", "peaceful"
+  tags      String[] // Custom tags
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([date])
+  @@map("journal_entries")
+}
+model Horoscope {
+  id            String    @id @default(cuid())
+  sign          String    @unique
+  element       String
+  rulingPlanet  String
+  traits        String[]
+  strength      String
+  challenge     String
+  compatibleSigns String[]
+  todayTheme    String
+  advice        String
+  luckyNumber   Int
+  bestTime      String
+  lifeLesson    String
+  shadowAspect  String
+  spiritualGift String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("horoscopes")
+}
+
+model Mantra {
+  id          String   @id @default(cuid())
+  text        String   @unique @db.Text
+  translation String?  @db.Text
+  category    String   // Peace, Guidance, Wisdom, Love, Growth, Intuition
+  element     String   // Fire, Earth, Air, Water - matches spiritType
+  energy      String   // Calm, Active, Balanced - matches energyType
+  signs       String[] // Compatible zodiac signs
+  intention   String   @db.Text // What this mantra helps with
+  pronunciation String? @db.Text // How to pronounce the mantra
+  repetitions Int      @default(108) // Suggested number of repetitions
+  bestTime    String?  // Best time to practice (Morning, Evening, Anytime)
+  guide       Json?    // Step-by-step guide as JSON array
+  origin      String?  // Sanskrit, Tibetan, etc.
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([element])
+  @@index([energy])
+  @@map("mantras")
+}
+
+model Quote {
+  id          String   @id @default(cuid())
+  text        String   @db.Text
+  author      String
+  theme       String   // Wisdom, Growth, Peace, Love, Courage, Transformation
+  element     String   // Fire, Earth, Air, Water
+  energy      String   // Calm, Active, Balanced
+  signs       String[] // Compatible zodiac signs
+  insight     String?  @db.Text // Why this quote matters (made optional for flexibility)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([element])
+  @@index([energy])
+  @@index([theme])
+  @@unique([text, author]) // Add this line to enable the text_author composite key
+  @@map("quotes")
+}
+
+model Meditation {
+  id          String   @id @default(cuid())
+  name        String   @unique  // Add @unique here
+  type        String   // Mindfulness, Transcendental, Loving-Kindness, Body Scan, Breath Work, Visualization
+  description String   @db.Text
+  duration    Int      // Suggested duration in minutes
+  difficulty  String   // Beginner, Intermediate, Advanced
+  element     String   // Fire, Earth, Air, Water
+  energy      String   // Calm, Active, Balanced
+  signs       String[] // Compatible zodiac signs
+  benefits    String[] // Array of benefits
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  guides      MeditationGuide[]
+
+  @@index([type])
+  @@index([element])
+  @@index([energy])
+  @@map("meditations")
+}
+
+model MeditationGuide {
+  id            String     @id @default(cuid())
+  meditationId  String
+  meditation    Meditation @relation(fields: [meditationId], references: [id], onDelete: Cascade)
+  title         String     // Changed from guideName
+  author        String     // Changed from teacher
+  tradition     String     // Buddhist, Hindu, Modern, etc.
+  preparation   String?    @db.Text  // New field
+  steps         Json       // Array of step objects with title and description
+  closing       String?    @db.Text  // New field
+  tips          Json?      // New field for tips array
+  audioUrl      String?    // Optional audio guide URL
+  videoUrl      String?    // Optional video guide URL
+  duration      Int        @default(0)  // Default to 0; update if needed
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([meditationId])
+  @@unique([meditationId, title])  // Add composite unique for upsert
+  @@map("meditation_guides")
+}
+
+model Ritual {
+  id          String   @id @default(cuid())
+  name        String   @unique  // Add @unique here
+  type        String   // Morning, Evening, Full Moon, New Moon, Seasonal, Cleansing
+  description String   @db.Text
+  duration    Int      // Duration in minutes
+  element     String   // Fire, Earth, Air, Water
+  energy      String   // Calm, Active, Balanced
+  signs       String[] // Compatible zodiac signs
+  items       String[] // Required items/tools
+  purpose     String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  guides      RitualGuide[]
+
+  @@index([type])
+  @@index([element])
+  @@index([energy])
+  @@map("rituals")
+}
+
+model RitualGuide {
+  id          String   @id @default(cuid())
+  ritualId    String
+  ritual      Ritual   @relation(fields: [ritualId], references: [id], onDelete: Cascade)
+  title       String
+  tradition   String   // Cultural/spiritual tradition
+  steps       Json     // Array of detailed step objects
+  timing      String?  // Best time to perform
+  preparation String   @db.Text // What to prepare beforehand
+  closing     String   @db.Text // How to close the ritual
+  tips        Json?    // New field for tips array
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ritualId])
+  @@unique([ritualId, title])  // Add composite unique for upsert
+  @@map("ritual_guides")
+}
+
+model MeditationLog {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mantraId      String?
+  quoteId       String?
+  meditationId  String?  // Track meditation practice
+  ritualId      String?  // Track ritual practice
+  date          DateTime @default(now())
+  duration      Int?
+  mood          String?
+  notes         String?  @db.Text // User's reflection notes
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([date])
+  @@map("meditation_logs")
 }

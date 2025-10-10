@@ -1,22 +1,43 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { Dream, Symbol, Interpretation } from '@/lib/types';
+import { Dream, Symbol } from '@/lib/types';
 import { interpretDreamLocally } from '@/lib/utils';
 import { revalidatePath } from 'next/cache';
 import { Prisma } from '@prisma/client';
+import { getServerSession } from '@/lib/auth';
 
+async function getCurrentUser() {
+  const session = await getServerSession();
+  if (!session?.user?.email) {
+    throw new Error('Not authenticated');
+  }
+  
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+  });
+  
+  if (!user) {
+    throw new Error('User not found');
+  }
+  
+  return user;
+}
+// services/db.ts - Update the createDream function
 export async function createDream(formData: FormData) {
   const text = formData.get('text') as string;
   if (!text.trim()) throw new Error('Dream text required');
 
+  const user = await getCurrentUser();
   const symbols = await prisma.symbol.findMany();
-  const typedSymbols = symbols as Symbol[];
-  const interpretation = interpretDreamLocally(text, typedSymbols);
+  
+  // Use the enhanced local interpretation
+  const interpretation = interpretDreamLocally(text, symbols as Symbol[]);
 
   const dream = await prisma.dream.create({
     data: {
       text,
+      userId: user.id,
       interpretation: interpretation as unknown as Prisma.InputJsonValue,
     },
     select: {
@@ -26,21 +47,34 @@ export async function createDream(formData: FormData) {
       interpretation: true,
       createdAt: true,
       updatedAt: true,
+      userId: true,
     },
   });
 
   revalidatePath('/');
   return dream as unknown as Dream;
 }
-
 export async function deleteDream(id: string) {
-  await prisma.dream.delete({ where: { id } });
-  revalidatePath('/');
-}
+  const session = await getServerSession();
+  if (!session?.user?.email) {
+    throw new Error('Not authenticated');
+  }
+  
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+  });
+  
+  if (!user) {
+    throw new Error('User not found');
+  }
 
-export async function getDream(id: string) {
-  const dream = await prisma.dream.findUnique({
-    where: { id },
+  return prisma.dream.delete({
+    where: { id, userId: user.id },
+  });
+}
+export async function getDream(id: string, userId: string) {
+  const dream = await prisma.dream.findFirst({
+    where: { id, userId },
     select: {
       id: true,
       date: true,
@@ -53,8 +87,9 @@ export async function getDream(id: string) {
   return dream as unknown as Dream | null;
 }
 
-export async function getDreams() {
+export async function getDreams(userId: string) {
   const dreams = await prisma.dream.findMany({
+    where: { userId },
     orderBy: { date: 'desc' },
     select: {
       id: true,
@@ -68,29 +103,32 @@ export async function getDreams() {
   return dreams as unknown as Dream[];
 }
 
-export async function searchDreams(query: string): Promise<Dream[]> {
-  if (query.length < 2) return [];
+export async function searchDreams(query: string) {
+  const session = await getServerSession();
+  if (!session?.user?.email) {
+    throw new Error('Not authenticated');
+  }
+  
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+  });
+  
+  if (!user) {
+    throw new Error('User not found');
+  }
 
-  const dreams = await prisma.dream.findMany({
+  return prisma.dream.findMany({
     where: {
+      userId: user.id,
       text: {
         contains: query,
         mode: 'insensitive',
       },
     },
     orderBy: { date: 'desc' },
-    select: {
-      id: true,
-      date: true,
-      text: true,
-      interpretation: true,
-      createdAt: true,
-      updatedAt: true,
-    },
+    take: 10,
   });
-  return dreams as unknown as Dream[];
 }
-
 // FIX: updateSymbol now expects number ID (or undefined for new symbols)
 export async function updateSymbol(
   id: number | undefined,
@@ -116,11 +154,39 @@ export async function getSymbols() {
 }
 
 export async function exportDreamsData() {
-  const dreams = await getDreams();
-  const symbols = await getSymbols();
-  return { dreams, symbols };
-}
+  const session = await getServerSession();
+  if (!session?.user?.email) {
+    throw new Error('Not authenticated');
+  }
+  
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+  });
+  
+  if (!user) {
+    throw new Error('User not found');
+  }
 
+  const [dreams, symbols] = await Promise.all([
+    prisma.dream.findMany({
+      where: { userId: user.id },
+      orderBy: { date: 'desc' },
+    }),
+    prisma.symbol.findMany({
+      where: { userId:user.id },
+    }),
+  ]);
+
+  return {
+    dreams: dreams.map(d => ({
+      ...d,
+      date: d.date.toISOString(),
+    })),
+    symbols,
+    exportDate: new Date().toISOString(),
+    version: '1.0',
+  };
+}
 export async function importDreamsData(data: {
   dreams: Dream[];
   symbols: Symbol[];
