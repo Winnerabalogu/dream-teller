@@ -33,8 +33,8 @@ export default function Tabs<T extends string>({
 }: TabsProps<T>) {
   return (
     <div className={clsx('relative', className)}>
-      <div className="flex justify-center gap-2 relative z-10">
-        {tabs.map(tab => {
+      <div className="flex justify-center relative z-10">
+       {tabs.map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
@@ -43,12 +43,12 @@ export default function Tabs<T extends string>({
               onClick={() => onTabChange(tab.id)}
               type="button"
               className={clsx(
-                'px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition',
-                isActive ? 'text-white' : 'text-purple-200'
+                'px-2 sm:px-3 py-2 rounded-xl flex items-center gap-1.5 sm:gap-2 font-medium transition flex-shrink-0 snap-center min-w-0 relative z-10',
+                isActive ? 'text-white' : 'text-purple-200 hover:text-purple-100'
               )}
             >
-              <Icon className="w-4 h-4" />
-              <span className="text-sm">{tab.label}</span>
+              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="text-xs sm:text-sm truncate">{tab.label}</span>
             </button>
           );
         })}

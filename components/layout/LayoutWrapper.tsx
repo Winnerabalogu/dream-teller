@@ -33,11 +33,11 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
 
   return (
     <main
-      className={`flex-1 relative z-10 transition-all duration-300 ease-in-out min-h-screen ${
+      className={`flex h-dvh${
         isCollapsed ? "lg:ml-20" : "lg:ml-80"
       } ml-0`}
     >
-      <div className="w-full h-full">{children}</div>
+      <div className="flex-1 flex flex-col overflow-hidden">{children}</div>
     </main>
   )
 }

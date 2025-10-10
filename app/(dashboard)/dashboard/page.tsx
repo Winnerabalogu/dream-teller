@@ -83,35 +83,27 @@ export default function Home() {
   ] as const satisfies Tab<'patterns' | 'input' | 'history' | 'dictionary'>[];
 
   return (
-    <div className="min-h-screen relative overflow-x-hidden pt-16 lg:pt-4">
-      {/* Floating clouds */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="cloud cloud-1"></div>
-        <div className="cloud cloud-2"></div>
-        <div className="cloud cloud-3"></div>
-        <div className="cloud cloud-4"></div>
-        <div className="cloud cloud-5"></div>
-      </div>
+    <div className="min-h-screen pt-12 lg:pt-4 pb-8 sm:pb-12">
 
       {/* Content */}
-      <div className="relative z-10 w-full">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-16 w-full">
+      
+        <div className="max-w-4xl mx-auto px-3 sm:px-6 pb-8 sm:pb-16">
           {/* Header */}
-          <header className="text-center mb-6 sm:mb-8 lg:mb-12 pt-4 sm:pt-6 lg:pt-8 animate-fade-in">
-            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 sm:mb-3 lg:mb-4">
-              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-purple-300 animate-pulse" />
-              <h1 className="text-2xl sm:text-3xl lg:text-5xl xl:text-6xl font-light tracking-tight text-gradient">
-                Aeterna&apos;s Journal
-              </h1>
-              <Cloud className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-blue-300 animate-pulse" />
-            </div>
-            <p className="text-purple-200 text-xs sm:text-sm lg:text-base xl:text-lg font-light opacity-90 max-w-2xl mx-auto px-2 sm:px-4">
-              Explore your subconscious mind. Discover hidden patterns. Unlock personal insights.
-            </p>
-          </header>
+        <header className="text-center mb-4 sm:mb-8 lg:mb-12 pt-2 sm:pt-6 lg:pt-8 animate-fade-in">  {/* Reduced mb/pt */}
+  <div className="flex items-center justify-center gap-1.5 sm:gap-3 mb-1.5 sm:mb-3 lg:mb-4">  {/* Tighter gap */}
+    <Sparkles className="w-4 h-4 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-purple-300 animate-pulse" />  {/* Smaller base icon */}
+    <h1 className="text-xl sm:text-3xl lg:text-5xl xl:text-6xl font-light tracking-tight text-gradient">  {/* Smaller base title */}
+      Aeterna&apos;s Journal
+    </h1>
+    <Cloud className="w-4 h-4 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-blue-300 animate-pulse" />
+  </div>
+  <p className="text-purple-200 text-sm lg:text-base xl:text-lg font-light opacity-90 max-w-2xl mx-auto px-0 sm:px-4 hyphens-auto leading-relaxed">  {/* text-sm base, no px on mobile, added leading */}
+    Explore your subconscious mind. Discover hidden patterns. Unlock personal insights.
+  </p>
+        </header>
 
           {/* Tabs */}
-          <div className="mb-6 sm:mb-8">
+          <div className="mb-8 sm:mb-10">
             <Tabs
               tabs={tabs}
               activeTab={activeTab}
@@ -119,11 +111,10 @@ export default function Home() {
             />
           </div>
 
-          {/* Export/Import */}
-          {activeTab === 'input' && (
-            <div className="flex justify-center space-x-3 sm:space-x-4 mb-4 sm:mb-6">
-              <ExportImport />
-            </div>
+         {activeTab === 'input' && (
+      <div className="flex justify-center space-x-2 sm:space-x-4 mb-4 sm:mb-6">  {/* Tighter space-x */}
+        <ExportImport />
+      </div>
           )}
 
           {/* Tab Content */}
@@ -138,26 +129,26 @@ export default function Home() {
 
               {/* Info Cards */}
               {!interpretation && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-8 sm:mt-10 lg:mt-12 animate-slide-up">
-                  {[
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 mt-6 sm:mt-10 lg:mt-12 animate-slide-up">  {/* Reduced gap/mt */}
+                    {[
                     { icon: <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />, title: 'Instant Insights', desc: 'AI-powered dream analysis' },
                     { icon: <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />, title: 'Symbol Dictionary', desc: 'Personal interpretation library' },
                     { icon: <Zap className="w-4 h-4 sm:w-5 sm:h-5" />, title: 'Pattern Recognition', desc: 'Track recurring themes' },
-                  ].map((card, i) => (
-                    <div
-                      key={i}
-                      className="bg-white/5 backdrop-blur-lg rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/10 hover:border-white/20 transition-all hover:bg-white/10 group cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                        <div className="p-1 sm:p-2 bg-purple-500/20 rounded-lg group-hover:bg-purple-500/30 transition-colors">
-                          <div className="text-purple-300 text-sm sm:text-base">{card.icon}</div>
-                        </div>
-                        <h3 className="font-medium text-purple-100 text-sm sm:text-base">{card.title}</h3>
-                      </div>
-                      <p className="text-purple-300 text-xs sm:text-sm font-light">{card.desc}</p>
+                 ].map((card, i) => (
+                <div
+                  key={i}
+                  className="bg-white/5 backdrop-blur-lg rounded-lg sm:rounded-2xl p-3 sm:p-6 border border-white/10 hover:border-white/20 transition-all hover:bg-white/10 group cursor-pointer" 
+                >
+                  <div className="flex items-center gap-1.5 sm:gap-3 mb-1.5 sm:mb-3">  {/* Tighter gap */}
+                    <div className="p-1 sm:p-2 bg-purple-500/20 rounded-md group-hover:bg-purple-500/30 transition-colors">  {/* Smaller rounded */}
+                      <div className="text-purple-300 text-xs sm:text-base">{card.icon}</div>  {/* text-xs for icon container */}
                     </div>
-                  ))}
+                    <h3 className="font-medium text-purple-100 text-xs sm:text-base">{card.title}</h3>  {/* text-xs base */}
+                  </div>
+                  <p className="text-purple-300 text-xs font-light leading-relaxed">{card.desc}</p>  {/* Added leading */}
                 </div>
+              ))}
+            </div>
               )}
             </>
           )}
@@ -190,49 +181,41 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="space-y-3 sm:space-y-4">
-                  {dreams.map((dream) => {
-                    const isExpanded = expandedDreams.has(dream.id);
-                    return (
-                      <article
-                        key={dream.id}
-                        className="bg-white/5 backdrop-blur-lg rounded-xl p-4 sm:p-6 border border-white/10 hover:bg-white/10 transition-all"
-                      >
-                        <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
-                          <div className="text-xs sm:text-sm text-purple-300">
-                            {new Date(dream.date).toLocaleDateString()}
-                          </div>
-                          <button
-                            onClick={() => toggleDreamExpansion(dream.id)}
-                            className="flex items-center gap-1 text-blue-300 hover:text-blue-200 transition-colors text-xs sm:text-sm flex-shrink-0 ml-2"
-                          >
-                            {isExpanded ? (
-                              <>
-                                <ChevronUp className="w-3 h-3 sm:w-4 sm:h-4" />
-                                <span className="hidden sm:inline">Less</span>
-                              </>
-                            ) : (
-                              <>
-                                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
-                                <span className="hidden sm:inline">More</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
+                 {dreams.map((dream) => {
+  const isExpanded = expandedDreams.has(dream.id);
+  return (
+    <article
+      key={dream.id}
+      className="bg-white/5 backdrop-blur-lg rounded-lg p-3 sm:p-6 border border-white/10 hover:bg-white/10 transition-all" 
+    >
+      <div className="flex items-start justify-between gap-1.5 mb-2 sm:mb-3">  {/* Tighter gap */}
+        <div className="text-xs text-purple-300">  {/* Dropped sm: for consistency */}
+          {new Date(dream.date).toLocaleDateString()}
+        </div>
+        <button
+          onClick={() => toggleDreamExpansion(dream.id)}
+          className="flex items-center justify-center gap-1 text-blue-300 hover:text-blue-200 transition-colors text-xs min-w-[32px] min-h-[32px] rounded-full"
+          
 
-                        <p className="text-purple-200 mb-3 sm:mb-4 italic text-sm sm:text-base">
-                          {isExpanded ? dream.text : `${dream.text.substring(0, 80)}${dream.text.length > 80 ? '...' : ''}`}
-                        </p>
+        >
+          {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}  {/* Dropped sm: icons, uniform size */}
+        </button>
+      </div>
 
-                        {isExpanded && (
-                          <div className="mt-4 pt-4 border-t border-white/10 animate-fade-in">
-                            <h4 className="text-sm sm:text-base font-medium text-purple-300 mb-3">Interpretation</h4>
-                            <div className="text-indigo-200 text-sm sm:text-base">
-                              <Interpretation interpretation={dream.interpretation as InterpretationType} />
-                            </div>
-                          </div>
-                        )}
-                      </article>
-                    );
+      <p className="text-purple-200 mb-2 sm:mb-4 italic text-sm leading-relaxed line-clamp-3 sm:line-clamp-none">  {/* Shorter clamp on mobile, added leading */}
+        {isExpanded ? dream.text : `${dream.text.substring(0, 60)}${dream.text.length > 60 ? '...' : ''}`}
+      </p>
+
+      {isExpanded && (
+        <div className="mt-3 pt-3 border-t border-white/10 animate-fade-in">  {/* Reduced mt/pt */}
+          <h4 className="text-xs sm:text-base font-medium text-purple-300 mb-2">Interpretation</h4>  {/* text-xs base */}
+          <div className="text-indigo-200 text-sm leading-relaxed line-clamp-4 sm:line-clamp-none">  {/* Clamp to fit mobile */}
+            <Interpretation interpretation={dream.interpretation as InterpretationType} />
+          </div>
+        </div>
+      )}
+    </article>
+  );
                   })}
                 </div>
               )}
@@ -263,21 +246,21 @@ export default function Home() {
                         {Object.entries(patterns.recurringSymbols).map(([sym, count]) => {
                           const percentage = Math.round((Number(count) / dreams.length) * 100);
                           return (
-                            <li key={sym} className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-purple-200 py-2 sm:py-3 border-b border-white/10 last:border-0 gap-1 sm:gap-0">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium capitalize text-sm sm:text-base">{sym}</span>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="w-16 sm:w-24 h-2 bg-white/10 rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-gradient-to-r from-purple-500 to-blue-400 rounded-full"
-                                    style={{ width: `${percentage}%` }}
-                                  />
-                                </div>
-                                <span className="text-blue-300 text-xs sm:text-sm min-w-12 text-right">
-                                  {percentage}%
-                                </span>
-                              </div>
+                           <li key={sym} className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-purple-200 py-1.5 sm:py-3 border-b border-white/10 last:border-0 gap-2 sm:gap-0"> 
+  <div className="flex items-center gap-2 w-full sm:w-auto">  {/* Full width on mobile */}
+    <span className="font-medium capitalize text-sm">{sym}</span>  {/* Dropped sm: */}
+  </div>
+  <div className="flex items-center justify-between sm:justify-normal gap-2 sm:gap-3 w-full sm:w-auto">  {/* justify-between on mobile for centering */}
+    <div className="w-12 sm:w-24 h-2 bg-white/10 rounded-full overflow-hidden flex-1 sm:flex-none">  {/* Smaller w, flex-1 on mobile */}
+      <div 
+        className="h-full bg-gradient-to-r from-purple-500 to-blue-400 rounded-full"
+        style={{ width: `${percentage}%` }}
+      />
+    </div>
+    <span className="text-blue-300 text-xs text-right flex-shrink-0 min-w-[2rem]">  {/* Smaller min-w, no sm: */}
+      {percentage}%
+    </span>
+  </div>
                             </li>
                           );
                         })}
@@ -312,30 +295,30 @@ export default function Home() {
                 <div className="bg-white/5 backdrop-blur-lg rounded-xl sm:rounded-2xl p-8 sm:p-12 text-center border border-white/10">
                   <BookOpen className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-purple-400 mb-3 sm:mb-4" />
                   <p className="text-purple-300 text-sm sm:text-base mb-4">No symbols in your dictionary yet.</p>
-                  <button
-                    onClick={() => setShowDictionaryModal(true)}
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-6 py-2 rounded-lg transition-all font-medium text-sm"
-                  >
+                <button
+                      onClick={() => setShowDictionaryModal(true)}
+                      className="flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-3 py-2.5 sm:py-2 rounded-lg transition-all font-medium text-xs sm:text-base w-full sm:w-auto min-h-[44px]"  
+                    >
                     Add Your First Symbol
                   </button>
                 </div>
               ) : (
-                <div className="grid gap-3 sm:gap-4 max-h-[60vh] overflow-y-auto scrollbar-hide">
+                <div className="grid gap-2 sm:gap-4 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto scrollbar-hide">  {/* Shorter max-h on mobile */}
                   {symbols.map((symbol) => (
                     <div
                       key={symbol.id}
-                      className="bg-white/5 backdrop-blur-lg rounded-xl p-3 sm:p-4 border border-white/10 hover:bg-white/10 transition-all flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4"
+                      className="bg-white/5 backdrop-blur-lg rounded-lg p-2.5 sm:p-4 border border-white/10 hover:bg-white/10 transition-all flex flex-col gap-2 sm:gap-4" 
                     >
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-purple-300 capitalize text-sm sm:text-base mb-1 sm:mb-2">
+                        <h4 className="font-medium text-purple-300 capitalize text-xs sm:text-base mb-1">  {/* text-xs base */}
                           {symbol.key}
                         </h4>
-                        <p className="text-purple-200 text-xs sm:text-sm leading-relaxed line-clamp-2 sm:line-clamp-3">
+                        <p className="text-purple-200 text-xs sm:text-sm leading-relaxed line-clamp-2">  {/* Uniform clamp-2 for mobile fit */}
                           {symbol.meaning}
                         </p>
                       </div>
                       <button
-                        className="text-red-300 hover:text-red-400 transition text-xs sm:text-sm flex-shrink-0 self-end sm:self-auto px-2 py-1 rounded border border-red-500/30 hover:border-red-500/50"
+                        className="text-red-300 hover:text-red-400 transition text-xs w-full sm:w-auto py-1.5 sm:py-1 rounded border border-red-500/30 hover:border-red-500/50 min-h-[36px]"  
                         onClick={async () => {
                           if (confirm(`Delete "${symbol.key}" from your dictionary?`)) {
                             await deleteSymbol(symbol.id);
@@ -356,6 +339,5 @@ export default function Home() {
           )}
         </div>
       </div>
-    </div>
   );
 }
