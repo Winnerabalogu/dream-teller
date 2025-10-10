@@ -11,7 +11,7 @@ const nextConfig = {
   },
   // Add these for better error handling
   experimental: {
-    serverComponentsExternalPackages: ['bcryptjs'],
+    serverExternalPackages: ['bcryptjs'],
   },
   // Handle auth errors gracefully
   async redirects() {
