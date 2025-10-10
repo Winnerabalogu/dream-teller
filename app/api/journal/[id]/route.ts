@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
-
+export const runtime = "nodejs"
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

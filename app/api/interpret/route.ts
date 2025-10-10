@@ -5,7 +5,7 @@ import { interpretDreamLocally } from '@/lib/interpretation';
 import { getSymbols } from '@/services/db';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
-
+export const runtime = "nodejs"
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();

@@ -1,7 +1,7 @@
 import { hash } from 'bcryptjs';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-
+export const runtime = "nodejs"
 export async function POST(req: Request) {
   try {
     const { name, email, password } = await req.json();

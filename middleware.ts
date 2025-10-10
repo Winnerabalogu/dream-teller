@@ -1,19 +1,21 @@
-export { auth as middleware } from "@/lib/auth"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { NextResponse } from "next/server"
+import { getToken } from "next-auth/jwt"
+
+export const runtime = "edge" // edge-compatible now
+
+export async function middleware(req: any) {
+  const token = await getToken({ req })
+  const isAuth = !!token
+
+  if (!isAuth && req.nextUrl.pathname.startsWith("/dashboard")) {
+    const loginUrl = new URL("/auth/signin", req.url)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  return NextResponse.next()
+}
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api/auth (auth endpoints)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
-     * - auth pages (signin, register)
-     * - welcome page (onboarding)
-     * - homepage (landing page)
-     *
-     * Only protect /dashboard/* routes
-     */
-    '/dashboard/:path*',
-  ],
+  matcher: ['/dashboard/:path*'],
 }

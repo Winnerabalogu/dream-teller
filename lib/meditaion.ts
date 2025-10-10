@@ -118,7 +118,7 @@ export interface Quote {
   element: string
   energy: string
   signs: string[]
-  insight: string
+  insight: string | null
 }
 
 export interface Props {

@@ -8,7 +8,7 @@ import {
   getDailyRitual,
   getUserProfile,
 } from "@/services/meditation.service"
-
+export const runtime = "nodejs"
 export async function GET() {
   try {
     const session = await auth()

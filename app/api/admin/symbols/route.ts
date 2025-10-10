@@ -8,7 +8,7 @@ import {
   createSymbol as createSymbolSvc,
   deleteSymbol as deleteSymbolSvc,
 } from '@/services/Symbol.service';
-
+export const runtime = "nodejs"
 export async function GET() {
   try {
     const symbols = await getSymbols();

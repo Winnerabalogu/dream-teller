@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getMeditationInsights } from "@/services/meditation.service"
-
+export const runtime = "nodejs"
 export async function GET() {
   try {
     const insights = await getMeditationInsights()
