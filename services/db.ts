@@ -5,10 +5,10 @@ import { Dream, Symbol } from '@/lib/types';
 import { interpretDreamLocally } from '@/lib/utils';
 import { revalidatePath } from 'next/cache';
 import { Prisma } from '@prisma/client';
-import { getServerSession } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 
 async function getCurrentUser() {
-  const session = await getServerSession();
+  const session = await auth();
   if (!session?.user?.email) {
     throw new Error('Not authenticated');
   }
@@ -55,7 +55,7 @@ export async function createDream(formData: FormData) {
   return dream as unknown as Dream;
 }
 export async function deleteDream(id: string) {
-  const session = await getServerSession();
+  const session = await auth();
   if (!session?.user?.email) {
     throw new Error('Not authenticated');
   }
@@ -104,7 +104,7 @@ export async function getDreams(userId: string) {
 }
 
 export async function searchDreams(query: string) {
-  const session = await getServerSession();
+  const session = await auth();
   if (!session?.user?.email) {
     throw new Error('Not authenticated');
   }
@@ -154,7 +154,7 @@ export async function getSymbols() {
 }
 
 export async function exportDreamsData() {
-  const session = await getServerSession();
+  const session = await auth();
   if (!session?.user?.email) {
     throw new Error('Not authenticated');
   }

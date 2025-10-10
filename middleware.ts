@@ -1,14 +1,12 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server"
-import { getToken } from "next-auth/jwt"
+import { auth } from "@/lib/auth"
 
+export async function middleware(request: Request) {
+  const session = await auth()
+  const isAuth = !!session?.user
 
-export async function middleware(req: any) {
-  const token = await getToken({ req })
-  const isAuth = !!token
-
-  if (!isAuth && req.nextUrl.pathname.startsWith("/dashboard")) {
-    const loginUrl = new URL("/auth/signin", req.url)
+  if (!isAuth && request.url.includes("/dashboard")) {
+    const loginUrl = new URL("/auth/signin", request.url)
     return NextResponse.redirect(loginUrl)
   }
 

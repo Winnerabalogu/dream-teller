@@ -1,11 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { getServerSession } from "@/lib/auth"
+import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 
 async function getCurrentUser() {
-  const session = await getServerSession()
+  const session = await auth()
   if (!session?.user?.email) {
     throw new Error("Not authenticated")
   }
