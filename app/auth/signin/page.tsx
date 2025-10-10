@@ -2,7 +2,7 @@
 
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Sparkles, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
@@ -13,7 +13,9 @@ export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+    
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -29,7 +31,8 @@ export default function SignInPage() {
       if (result?.error) {
         setError('Invalid email or password');
       } else {
-        router.push('/welcome');
+        // Use callbackUrl instead of hardcoded '/welcome'
+        router.push(callbackUrl);
         router.refresh();
       }
     } catch (err) {
@@ -47,7 +50,7 @@ export default function SignInPage() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-2 mb-2">
             <Sparkles className="w-8 h-8 text-purple-400" />
-            <h1 className="text-4xl font-light text-white">Aeterna's Journal</h1>
+            <h1 className="text-4xl font-light text-white">Aeterna&apos;s Journal</h1>
           </div>
           <p className="text-purple-300">Sign in to your dream journal</p>
         </div>
