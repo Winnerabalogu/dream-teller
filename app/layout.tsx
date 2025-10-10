@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import SessionProvider from '@/components/providers/SessionProvider';
+import {AuthProvider} from '@/components/providers/SessionProvider';
 import './globals.css';
 import { Toaster } from 'sonner';
 
@@ -27,10 +27,10 @@ export default function RootLayout({
       <body
        suppressHydrationWarning={true}
       >
-        <SessionProvider>
+        <AuthProvider>
           {children}
           <Toaster richColors position="top-right" />
-        </SessionProvider>
+        </AuthProvider>
       </body>
     </html>
   );
