@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌙 DreamTell & Signs
 
-## Getting Started
+**Aeterna dream analysis, meditation, and spiritual wellness**
 
-First, run the development server:
+> Understand your dreams with cutting-edge AI technology
+
+![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-blue?style=flat-square)
+![AI](https://img.shields.io/badge/AI-Powered-green?style=flat-square)
+
+---
+
+## ✨ What It Does
+
+Aeterna transforms your dreams into insights using AI. Track dreams, discover patterns, meditate, and journal - all in one beautiful app.
+
+**Core Features:**
+- 🔮 **Dream Analysis** - Instant interpretation of dream symbolism and meaning
+- 📊 **Pattern Recognition** - Track recurring themes across your dream journal
+- 🧘‍♀️ **Guided Meditation** - Curated sessions for sleep, focus, and relaxation
+- 📔 **Smart Journaling** - Voice-to-text recording with mood tracking
+- 🎯 **Predictive Insights** - AI predicts dream patterns based on your data
+
+---
+
+## 🛠️ Tech Stack
+
+**Frontend:** Next.js 14, TypeScript, Tailwind CSS, Framer Motion  
+**Backend:** Node.js, PostgreSQL (Supabase)  
+**AI:** OpenAI GPT-4, Custom ML models  
+**Deployment:** Vercel
+
+---
+
+## 🎯 Key Highlights
+
+- ⚡ Real-time AI dream analysis in seconds
+- 🔐 End-to-end encrypted journal entries
+- 📱 Fully responsive mobile experience
+- 🌍 Multi-language support (12+ languages)
+- 🎨 Calming, spiritual-themed UI
+
+---
+
+## 🚀 Quick Start
 
 ```bash
+# Clone and install
+cd dreamtell-signs
+npm install
+
+# Environment setup
+cp .env.example .env.local
+# Add your OpenAI API key and database URL
+
+# Run locally
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📂 Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+dreamtell-signs/
+├── app/
+│   ├── (dashboard)/      # User dashboard
+│   ├── api/              # API routes
+│   └── dream-analysis/   # AI analysis features
+├── components/
+│   ├── ui/               # Reusable components
+│   └── dream-journal/    # Journal features
+├── lib/
+│   ├── ai/               # AI integrations
+│   └── db/               # Database helpers
+└── types/                # TypeScript types
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🔥 Features Deep Dive
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Aeterna Analysis Engine
+- 10,000+ dream symbols in database
+- Context-aware interpretations
+- Cultural and psychological perspectives
+- Personalized insights based on your history
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Meditation Library
+- 100+ guided meditation sessions
+- Binaural beats for deep relaxation
+- Progress tracking and streaks
+- Custom session builder
 
-## Deploy on Vercel
+### Smart Journaling
+- Voice-to-text dream recording
+- Mood and emotion tracking
+- Beautiful timeline view
+- Search by symbol, emotion, or date
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🗺️ Roadmap
+
+- [x] AI dream interpretation
+- [x] Meditation library
+- [ ] Mobile apps (React Native)
+- [ ] Sleep tracker integration
+- [ ] Community features
+
+---
+
+## 👤 Author
+
+**Winner Abalogu**  
+Founder & Developer at Nerdwave
+
+- GitHub: [@Winnerabalogu](https://github.com/Winnerabalogu)
+- Email: wabalogu@gmail.com
+
+---
+
+## 📄 License
+
+Proprietary © 2025 Nerdwave
+
+---
+
+<div align="center">
+
+*"Dreams are the touchstones of our characters." - Henry David Thoreau*
+
+</div>
