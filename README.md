@@ -1,4 +1,4 @@
-# 🌙 DreamTell & Signs
+# Aeterna's Journal
 
 **Aeterna dream analysis, meditation, and spiritual wellness**
 
