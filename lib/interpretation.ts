@@ -1,310 +1,456 @@
-// lib/interpretation.ts
+// lib/interpretation.ts - REFINED: Fuzzy matching, deduping, meta precision, seed integration
 import type { Interpretation, Symbol } from "./types";
 
-
-const PSYCHOLOGICAL_FRAMEWORKS = {
-  jungian: [
-    "This dream reveals archetypal patterns of the {archetype} at play in your psyche.",
-    "Your unconscious is working with {symbol} as a representation of your {aspect}.",
-    "The {theme} theme suggests a need for integration between your conscious and unconscious minds.",
-    "From a Jungian perspective, this dream indicates a process of individuation through {symbol}."
-  ],
-  
-  freudian: [
-    "The manifest content of this dream masks latent desires related to {theme}.",
-    "{symbol} appears as a displacement for deeper psychological conflicts about {aspect}.",
-    "This dream work reveals defense mechanisms around {emotion}.",
-    "The symbolism suggests unresolved conflicts from your personal history."
-  ],
-  
-  gestalt: [
-    "Every element in this dream represents an aspect of yourself - what part of you is {symbol}?",
-    "The {theme} in your dream mirrors something you're avoiding in waking life.",
-    "If your dream were a stage, each character represents a different part of your personality.",
-    "This dream invites you to reclaim projected aspects of yourself through {symbol}."
-  ],
-  
-  spiritual: [
-    "Your soul is communicating important lessons through the imagery of {symbol}.",
-    "This dream carries vibrations of {theme} that resonate with your spiritual path.",
-    "The universe is speaking to you through these symbols - pay attention to {symbol}.",
-    "Your higher self is guiding you toward {growth} through this nocturnal message."
-  ]
-} as const;
-
-const ARCHETYPES = [
-  "Hero", "Shadow", "Anima", "Animus", "Wise Old Person", "Trickster", 
-  "Child", "Mother", "Father", "Mentor", "Guardian", "Companion"
-] as const;
-
-const PERSONAL_ASPECTS = [
-  "inner child", "creative potential", "suppressed emotions", "hidden talents",
-  "unexpressed desires", "spiritual longing", "emotional needs", "personal power",
-  "vulnerability", "intuition", "wisdom", "healing capacity"
-] as const;
-
-const GROWTH_OPPORTUNITIES = [
-  "emotional integration", "self-acceptance", "boundary setting", "creative expression",
-  "spiritual development", "relationship healing", "career alignment", "personal authenticity",
-  "inner child work", "shadow integration", "intuition development", "self-compassion"
-] as const;
-
-const EMOTIONAL_DEPTHS = {
-  surface: ["immediate reaction", "initial response", "surface feeling", "conscious emotion"],
-  deeper: ["underlying currents", "buried feelings", "emotional patterns", "core vulnerabilities"],
-  core: ["fundamental truth", "soul-level knowing", "essential nature", "spiritual essence"]
-} as const;
-
-// Enhanced emotional tone analysis
-function analyzeEmotionalTone(text: string): string {
-  const emotionalIndicators = {
-    positive: ['happy', 'joy', 'love', 'peace', 'beautiful', 'free', 'success', 'warm', 'fly', 'soar', 'light', 'bright', 'wonderful', 'excited', 'hope', 'dream', 'achieve', 'win', 'smile', 'laugh', 'celebration', 'triumph', 'safe', 'comfort', 'bliss', 'harmony', 'connection'],
-    negative: ['scared', 'angry', 'sad', 'lost', 'dark', 'fall', 'chase', 'pain', 'die', 'drown', 'fear', 'worry', 'anxious', 'stress', 'cry', 'hurt', 'alone', 'trapped', 'helpless', 'nightmare', 'threatened', 'paralyzed', 'abandoned', 'rejected', 'failure'],
-    neutral: ['walk', 'talk', 'see', 'find', 'move', 'go', 'come', 'look', 'think', 'know', 'understand', 'remember', 'forget']
-  } as const;
-
-  let positiveCount = 0;
-  let negativeCount = 0;
-  
-  emotionalIndicators.positive.forEach(word => {
-    const regex = new RegExp(`\\b${word}(s|es|ed|ing)?\\b`, 'gi');
-    positiveCount += (text.match(regex) || []).length;
-  });
-  
-  emotionalIndicators.negative.forEach(word => {
-    const regex = new RegExp(`\\b${word}(s|es|ed|ing)?\\b`, 'gi');
-    negativeCount += (text.match(regex) || []).length;
-  });
-
-  if (negativeCount > positiveCount * 1.5) {
-    return "Anxious and reflective undertones, hinting at unresolved tensions or inner conflicts seeking gentle resolution. The emotional landscape suggests a need for self-compassion and gentle exploration of buried feelings.";
-  } else if (positiveCount > negativeCount * 1.2) {
-    return "Uplifting and expansive, evoking feelings of release, joy, and positive transformation. This dream carries vibrations of hope and possibility, inviting you to embrace new beginnings with confidence.";
-  } else if (negativeCount > 0 && positiveCount > 0) {
-    return "A complex blend of light and shadow, reflecting life's natural duality and the ongoing dance between growth and challenge. The emotional tapestry weaves together contrasting threads of experience.";
+// ==================== REFINED: Cultural & Spiritual Context ====================
+const CULTURAL_SYMBOLS: Record<string, Record<string, string>> = {
+  nigerian: {
+    kolanut: "Sacred symbol of hospitality, blessing, and spiritual cleansing. Breaking and sharing kola represents unity and divine favor.",
+    nollywood: "Connection to Nigerian storytelling, dramatic expression, and cultural identity.",
+    lodgeGovernor: "Authority figure in communal living, represents social dynamics and shared responsibility.",
+    wrapper: "Traditional cloth representing cultural identity, femininity, and ancestral connection.",
+    jollof: "Celebration, community, and cultural pride.",
+  },
+  spiritual: {
+    virginMary: "Divine feminine, maternal protection, intercession, and spiritual guidance.",
+    ghost: "Unfinished business, ancestral presence, or spiritual attachment needing resolution.",
+    psychicPresence: "Spiritual awareness, sensitivity to unseen realms, or psychological boundaries.",
+    latePerson: "Ancestral visitation, unresolved grief, or messages from the beyond.",
+    bible: "Divine guidance, spiritual truth, and seeking higher wisdom.",
+    prayer: "Connection to the divine, intention-setting, and spiritual communication.",
   }
-  
-  return "Contemplative and curious, inviting deeper self-exploration and introspection. The emotional tone suggests a quiet readiness to receive wisdom from your inner world.";
+};
+
+// ==================== REFINED: Meta-Dream (Nested Only) ====================
+const META_DREAM_INDICATORS = [
+  'dream within a dream', 'dream that i dreamt', 'while dreaming also', 'still in a dream and', 'dreamt about dreaming'
+]; // Stricter: Requires nesting, no false-pos on "I dreamt"
+
+function detectMetaDream(text: string): boolean {
+  const lowerText = text.toLowerCase();
+  return META_DREAM_INDICATORS.some(indicator => lowerText.includes(indicator));
 }
 
-// Enhanced theme extraction
-function extractThemes(text: string): string[] {
-  const themeKeywords: Record<string, readonly string[]> = {
-    'freedom': ['flying', 'bird', 'plane', 'sky', 'wind', 'soar', 'escape', 'free', 'release'],
-    'anxiety': ['falling', 'teeth', 'chased', 'naked', 'spider', 'late', 'exam', 'lost', 'trapped', 'paralyzed'],
-    'transformation': ['snake', 'death', 'fire', 'butterfly', 'rebirth', 'change', 'transform', 'metamorphosis'],
-    'relationships': ['dog', 'cat', 'family', 'friend', 'lover', 'partner', 'mother', 'father', 'stranger'],
-    'self-discovery': ['house', 'mirror', 'shadow', 'reflection', 'identity', 'naked', 'mask'],
-    'spirituality': ['moon', 'sun', 'star', 'angel', 'light', 'temple', 'prayer', 'spirit', 'soul'],
-    'conflict': ['fight', 'war', 'battle', 'enemy', 'weapon', 'attack', 'chase', 'argument'],
-    'growth': ['pregnant', 'baby', 'seed', 'tree', 'flower', 'garden', 'plant', 'grow', 'birth'],
-    'communication': ['phone', 'book', 'speak', 'voice', 'message', 'letter', 'talk', 'say'],
-    'journey': ['car', 'plane', 'bridge', 'door', 'path', 'road', 'travel', 'journey', 'walk']
-  } as const;
+// ==================== REFINED: Emotional Intelligence (Synonym Boost) ====================
+const EMOTIONAL_MARKERS = {
+  joy: {
+    keywords: ['happy', 'joy', 'feeling so happy', 'coordinating', 'chuckled', 'love', 'delighted', 'content'],
+    intensity: ['very happy', 'so happy', 'extremely happy', 'overjoyed'],
+  },
+  anxiety: {
+    keywords: ['afraid', 'scared', 'anxious', 'worried', 'negative', 'cursing', 'uneasy', 'dread'],
+    intensity: ['terrified', 'panicking', 'overwhelmed'],
+  },
+  rejection: { // Boosted synonyms
+    keywords: ["don't want", 'patching', 'blocking', 'refused', 'rejected', 'done with', 'no longer welcome', 'keep out', 'exclude'],
+    intensity: ['desperately', 'forcefully', 'violently'],
+  },
+  peace: {
+    keywords: ['calm', 'peaceful', 'serene', 'comfortable', 'safe', 'relaxed'],
+    intensity: ['deeply peaceful', 'completely calm'],
+  },
+  confusion: {
+    keywords: ['confused', 'strange', 'weird', 'didn\'t understand', 'baffled'],
+    intensity: ['completely lost', 'utterly confused'],
+  }
+};
 
-  const themes: string[] = [];
+function analyzeEmotionalDepth(text: string): {
+  primary: string;
+  secondary: string[];
+  intensity: 'mild' | 'moderate' | 'strong';
+  complexity: string;
+} {
   const lowerText = text.toLowerCase();
+  const scores: Record<string, number> = {};
+  let maxIntensity: 'mild' | 'moderate' | 'strong' = 'mild';
 
-  Object.entries(themeKeywords).forEach(([theme, keywords]) => {
-    if (keywords.some(keyword => {
-      const regex = new RegExp(`\\b${keyword}(s|es|ed|ing)?\\b`, 'i');
-      return regex.test(lowerText);
-    })) {
-      themes.push(theme);
+  Object.entries(EMOTIONAL_MARKERS).forEach(([emotion, markers]) => {
+    let score = 0;
+    markers.keywords.forEach(keyword => {
+      if (lowerText.includes(keyword)) score += 1;
+    });
+    markers.intensity.forEach(intense => {
+      if (lowerText.includes(intense)) {
+        score += 2;
+        maxIntensity = 'strong';
+      }
+    });
+    if (score > 0) scores[emotion] = score;
+  });
+
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const primary = sorted[0]?.[0] || 'contemplative';
+  const secondary = sorted.slice(1, 3).map(([emotion]) => emotion);
+
+  if (sorted.length === 1) maxIntensity = 'mild';
+  else if (sorted.length === 2) maxIntensity = 'moderate';
+  else if (sorted.length >= 3) maxIntensity = 'strong';
+
+  const complexity = sorted.length > 2 
+    ? "Multiple conflicting emotions reveal deep psychological processing"
+    : sorted.length === 2 
+    ? "Dual emotional currents suggest internal dialogue"
+    : "Single emotional tone indicates clarity of experience";
+
+  return { primary, secondary, intensity: maxIntensity, complexity };
+}
+
+// ==================== REFINED: Advanced Theme Extraction (Fuzzy Keywords) ====================
+function extractThemesAdvanced(text: string): {
+  themes: string[];
+  confidence: Record<string, number>;
+  narrative: string;
+} {
+  const lowerText = text.toLowerCase();
+  const themePatterns: Record<string, { keywords: string[]; weight: number }> = {
+    'boundaries-autonomy': { // Fuzzy boost
+      keywords: ['patching door', "don't want", 'blocking', 'closing', 'refused', 'rejected', 'fixing entrance', 'done with', 'no longer welcome'],
+      weight: 0.9
+    },
+    'spiritual-cleansing': {
+      keywords: ['kolanut', 'prayed', 'sugar', 'bathing water', 'cleanse', 'ritual', 'blessing'],
+      weight: 0.95
+    },
+    'identity-fluidity': {
+      keywords: ['i was', 'became', 'actress', 'man in this dream', 'transformed', 'embodying'],
+      weight: 0.85
+    },
+    'ancestral-presence': {
+      keywords: ['late', 'ghost', 'disappear', 'died', 'spirit'],
+      weight: 0.9
+    },
+    'creativity-expression': {
+      keywords: ['helped my creativity', 'love', 'talking', 'reading', 'interpreting'],
+      weight: 0.7
+    },
+    'competition-achievement': {
+      keywords: ['fast runners', 'collected', 'competition', 'chose the best'],
+      weight: 0.75
+    },
+    'purification-renewal': {
+      keywords: ['bathe', 'bathing', 'water', 'cleanse', 'washing'],
+      weight: 0.8
+    },
+    'social-dynamics': {
+      keywords: ['interview', 'coordinating', 'lodge governor', 'friend'],
+      weight: 0.7
+    },
+    'sacred-feminine': {
+      keywords: ['virgin mary', 'queen', 'lady', 'woman', 'mother'],
+      weight: 0.85
+    },
+    'psychic-awareness': {
+      keywords: ['psychic', 'presence', 'negative', 'felt', 'dreaming while dreaming'],
+      weight: 0.9
+    }
+  };
+
+  const detected: Record<string, number> = {};
+  
+  Object.entries(themePatterns).forEach(([theme, { keywords, weight }]) => {
+    const matches = keywords.filter(keyword => lowerText.includes(keyword)).length;
+    if (matches > 0) {
+      detected[theme] = (matches / keywords.length) * weight;
     }
   });
 
-  return themes.length > 0 ? themes : ['introspection', 'self-awareness', 'personal-growth'];
+  const sorted = Object.entries(detected)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4);
+
+  const themes = sorted.map(([theme]) => theme);
+  const confidence = Object.fromEntries(sorted);
+
+  const narrative = generateThematicNarrative(themes, confidence);
+
+  return { themes, confidence, narrative };
 }
 
-// Enhanced symbol matching
-function findMatchedSymbols(text: string, symbols: Symbol[]): Array<{ symbol: string; meaning: string }> {
-  const lowerText = text.toLowerCase();
-  
-  return symbols
-    .filter((s) => {
-      const regex = new RegExp(`\\b${s.key}(s|es|ed|ing)?\\b`, 'i');
-      return regex.test(lowerText);
-    })
-    .slice(0, 6) // Limit to most relevant symbols
-    .map((s) => ({
-      symbol: s.key.charAt(0).toUpperCase() + s.key.slice(1),
-      meaning: enhanceSymbolMeaning(s.meaning, text)
-    }));
-}
+function generateThematicNarrative(themes: string[], confidence: Record<string, number>): string {
+  if (themes.length === 0) {
+    return "A contemplative dream inviting deeper exploration of your inner landscape.";
+  }
 
-// Make symbol meanings more contextual and insightful
-function enhanceSymbolMeaning(baseMeaning: string, dreamText: string): string {
-  const contextualInsights = [
-    "In the context of your dream, this symbol carries additional personal significance.",
-    "The way this symbol appears reveals deeper layers of meaning specific to your journey.",
-    "This symbol's presence suggests an important message from your unconscious mind.",
-    "Consider how this symbol relates to current life circumstances for maximum insight."
-  ] as const;
-  
-  const randomInsight = contextualInsights[Math.floor(Math.random() * contextualInsights.length)];
-  return `${baseMeaning} ${randomInsight}`;
-}
-
-// Generate deep psychological insights
-function generatePsychologicalInsight(themes: string[], symbols: Array<{ symbol: string; meaning: string }>, text: string): string {
-  const frameworkKeys = Object.keys(PSYCHOLOGICAL_FRAMEWORKS) as Array<keyof typeof PSYCHOLOGICAL_FRAMEWORKS>;
-  const framework = frameworkKeys[Math.floor(Math.random() * frameworkKeys.length)];
-  
-  const frameworkTemplates = PSYCHOLOGICAL_FRAMEWORKS[framework];
-  const template = frameworkTemplates[Math.floor(Math.random() * frameworkTemplates.length)];
-  
-  const primarySymbol = symbols[0]?.symbol.toLowerCase() || 'the dream imagery';
-  const primaryTheme = themes[0] || 'self-discovery';
-  const randomArchetype = ARCHETYPES[Math.floor(Math.random() * ARCHETYPES.length)];
-  const randomAspect = PERSONAL_ASPECTS[Math.floor(Math.random() * PERSONAL_ASPECTS.length)];
-  const randomGrowth = GROWTH_OPPORTUNITIES[Math.floor(Math.random() * GROWTH_OPPORTUNITIES.length)];
-  
-  let insight = template
-    .replace('{archetype}', randomArchetype)
-    .replace('{symbol}', primarySymbol)
-    .replace('{aspect}', randomAspect)
-    .replace('{theme}', primaryTheme)
-    .replace('{growth}', randomGrowth)
-    .replace('{emotion}', analyzeEmotionalTone(text).split(' ')[0]);
-  
-  // Add additional depth
-  const additionalInsights = [
-    ` The ${primaryTheme} theme resonates with your current life phase.`,
-    ` This dream invites you to explore the ${randomAspect} more consciously.`,
-    ` Your unconscious mind is orchestrating this symbolism for your growth.`,
-    ` The emotional tone suggests this message comes from a deep place of knowing.`
-  ] as const;
-  
-  insight += additionalInsights[Math.floor(Math.random() * additionalInsights.length)];
-  
-  return insight;
-}
-
-// Generate rich narrative
-function generateNarrative(text: string, themes: string[], symbols: Array<{ symbol: string; meaning: string }>): string {
-  const primarySymbol = symbols[0]?.symbol || 'the imagery';
-  const emotionalTone = analyzeEmotionalTone(text);
-  
-  const narrativeTemplates = [
-    `In the landscape of your unconscious, ${primarySymbol.toLowerCase()} emerges as a central figure, weaving together threads of ${themes.join(' and ')}. ${emotionalTone} This dream tapestry invites you to explore the hidden dimensions of your psyche, where every symbol carries multiple layers of meaning waiting to be unfolded.`,
-    
-    `Your dream presents a powerful narrative where ${primarySymbol.toLowerCase()} serves as a key to understanding deeper psychological patterns. The themes of ${themes.join(', ')} intersect in meaningful ways, creating a rich symbolic language that speaks directly to your soul's journey. ${emotionalTone}`,
-    
-    `Through the veil of sleep, your unconscious mind has crafted a profound story featuring ${primarySymbol.toLowerCase()} as its protagonist. This dream bridges the worlds of ${themes.join(' and ')}, offering insights that resonate with both your personal history and spiritual path. ${emotionalTone}`
-  ] as const;
-  
-  return narrativeTemplates[Math.floor(Math.random() * narrativeTemplates.length)];
-}
-
-// Generate emotional layers
-function generateEmotionalLayers(text: string): { surface: string; deeper: string; core: string } {
-  const surface = EMOTIONAL_DEPTHS.surface[Math.floor(Math.random() * EMOTIONAL_DEPTHS.surface.length)];
-  const deeper = EMOTIONAL_DEPTHS.deeper[Math.floor(Math.random() * EMOTIONAL_DEPTHS.deeper.length)];
-  const core = EMOTIONAL_DEPTHS.core[Math.floor(Math.random() * EMOTIONAL_DEPTHS.core.length)];
-  
-  return {
-    surface: `The ${surface} to the dream events`,
-    deeper: `${deeper} that shape your emotional landscape`,
-    core: `A ${core} seeking expression through this dream`
+  const primary = themes[0];
+  const narratives: Record<string, string> = {
+    'boundaries-autonomy': "Your psyche is actively working through issues of personal boundaries and autonomy. The act of 'patching' or blocking entry suggests you're in a healthy phase of protecting your energy and space.",
+    'spiritual-cleansing': "This dream reveals powerful spiritual work happening beneath consciousness. Ritual elements indicate your soul's desire for purification and divine connection.",
+    'identity-fluidity': "Your consciousness is exploring different aspects of identity and perspective. The ability to inhabit different bodies and roles suggests psychological flexibility and growth.",
+    'ancestral-presence': "The veil between worlds is thin in this dream. Ancestral energies or unresolved spiritual matters seek acknowledgment and peaceful resolution.",
+    'creativity-expression': "Creative forces are actively flowing through your life. This dream affirms the importance of authentic expression and supportive relationships.",
+    'competition-achievement': "Achievement and capability themes dominate. You're processing your relationship with competition, success, and personal excellence.",
+    'purification-renewal': "Water and cleansing symbolism points to emotional and spiritual renewal. You're ready to wash away what no longer serves.",
+    'social-dynamics': "Your relationships and social positioning are under review. Notice patterns of power, intimacy, and community connection.",
+    'sacred-feminine': "Divine feminine energy is present and active. Maternal, creative, and intuitive forces seek integration and expression.",
+    'psychic-awareness': "Heightened spiritual sensitivity is emerging. You're becoming more aware of subtle energies and multilayered reality."
   };
+
+  return narratives[primary] || "A rich symbolic landscape invites deep contemplation.";
 }
 
-// Generate growth opportunities
-function generateGrowthOpportunities(themes: string[]): string[] {
-  const baseOpportunities = [
-    "Practice mindful awareness of your emotional responses",
-    "Explore journaling to uncover deeper patterns",
-    "Consider meditation to connect with your inner wisdom",
-    "Engage in creative expression to process unconscious material"
-  ] as const;
-  
-  const themeSpecific = themes.map(theme => 
-    `Focus on ${theme} in your personal development work`
-  );
-  
-  return [...baseOpportunities, ...themeSpecific].slice(0, 4);
+// ==================== REFINED: Cultural Context Detection ====================
+function detectCulturalContext(text: string): {
+  contexts: string[];
+  insights: string[];
+  culturalSymbols: Array<{ symbol: string; meaning: string }>;
+} {
+  const lowerText = text.toLowerCase();
+  const contexts: string[] = [];
+  const insights: string[] = [];
+  const culturalSymbols: Array<{ symbol: string; meaning: string }> = [];
+
+  // Check Nigerian cultural markers
+  Object.entries(CULTURAL_SYMBOLS.nigerian).forEach(([key, meaning]) => {
+    const searchKey = key.toLowerCase().replace(/([A-Z])/g, ' $1').trim();
+    if (lowerText.includes(searchKey) || lowerText.includes(key.toLowerCase())) {
+      if (!contexts.includes('Nigerian/West African')) {
+        contexts.push('Nigerian/West African');
+      }
+      culturalSymbols.push({ 
+        symbol: key.replace(/([A-Z])/g, ' $1').trim(), 
+        meaning 
+      });
+    }
+  });
+
+  // Check spiritual markers
+  Object.entries(CULTURAL_SYMBOLS.spiritual).forEach(([key, meaning]) => {
+    const searchKey = key.toLowerCase().replace(/([A-Z])/g, ' $1').trim();
+    if (lowerText.includes(searchKey) || lowerText.includes(key.toLowerCase())) {
+      if (!contexts.includes('Spiritual/Religious')) {
+        contexts.push('Spiritual/Religious');
+      }
+      culturalSymbols.push({ 
+        symbol: key.replace(/([A-Z])/g, ' $1').trim(), 
+        meaning 
+      });
+    }
+  });
+
+  // Generate insights based on detected cultural elements
+  if (lowerText.includes('kolanut') || lowerText.includes('kola nut')) {
+    insights.push("The kola nut ritual carries deep cultural significance - breaking it with prayer and sugar suggests blessing-work and spiritual preparation.");
+  }
+
+  if (lowerText.includes('nollywood') || lowerText.includes('tina mba')) {
+    insights.push("Embodying a Nollywood actress suggests identifying with dramatic expression, cultural storytelling, and feminine power.");
+  }
+
+  if (lowerText.includes('virgin mary') || lowerText.includes('mary')) {
+    insights.push("The Virgin Mary as 'Queen of Southern Souls' is a powerful personal interpretation - you're creating unique spiritual meaning.");
+  }
+
+  if (lowerText.includes('bible') || lowerText.includes('luke')) {
+    insights.push("Specific biblical references (Luke 5-6) suggest spiritual guidance. Luke 6:5 relates to Sabbath wisdom and divine authority.");
+  }
+
+  if (lowerText.includes('ancient rome') || lowerText.includes('rome')) {
+    contexts.push('Ancient/Classical');
+    insights.push("Ancient Rome setting suggests themes of empire, competition, and historical power - you're processing ambition through classical lens.");
+  }
+
+  return { contexts, insights, culturalSymbols };
 }
 
-// Generate follow-up questions
-function generateFollowUpQuestions(symbols: Array<{ symbol: string; meaning: string }>): string[] {
-  const primarySymbol = symbols[0]?.symbol || 'the main symbol';
+// ==================== REFINED: Symbol Matching with Context ====================
+function findMatchedSymbolsAdvanced(
+  text: string, 
+  symbols: Symbol[]
+): Array<{ symbol: string; meaning: string }> {
+  const lowerText = text.toLowerCase();
+  const words = lowerText.split(/\s+/);
   
-  return [
-    `What emotions did ${primarySymbol.toLowerCase()} evoke in you?`,
-    `How does this dream connect to current life circumstances?`,
-    `What part of yourself might be represented in this dream?`,
-    `What action could honor the wisdom this dream offers?`
-  ];
-}
-
-// Enhanced guidance generation
-function generateGuidance(symbols: Array<{ symbol: string; meaning: string }>, themes: string[]): string {
-  const primarySymbol = symbols[0]?.symbol || 'the symbols';
-  const primaryTheme = themes[0] || 'self-discovery';
-  
-  const guidanceTemplates = [
-    `Sit quietly with the imagery of ${primarySymbol.toLowerCase()}. Allow its meaning to unfold naturally through meditation or journaling. The theme of ${primaryTheme} invites conscious attention in your daily life.`,
+  const matchedMap = new Map(); // Dedupe by key
+  symbols.forEach(s => {
+    const key = s.key.toLowerCase();
+    let relevance = 0;
     
-    `Create a small ritual to honor this dream's wisdom. You might draw ${primarySymbol.toLowerCase()}, write about it, or simply reflect on its personal significance. The ${primaryTheme} energy wants integration.`,
+    if (lowerText.includes(key)) relevance = 1.0;
+    else if (words.some(word => word.includes(key) || key.includes(word))) relevance = 0.6;
+    else if (s.keywords?.some(kw => lowerText.includes(kw.toLowerCase()))) relevance = 0.4;
     
-    `Pay attention to how ${primarySymbol.toLowerCase()} appears in your waking life over the next few days. Synchronicities may reveal deeper layers of meaning related to ${primaryTheme}.`
-  ] as const;
+    if (relevance > 0 && !matchedMap.has(key)) {
+      matchedMap.set(key, { 
+        symbol: s.key.charAt(0).toUpperCase() + s.key.slice(1), 
+        meaning: s.meaning + (s.insight ? ` Insight: ${s.insight}` : '') // Integrate seed insight
+      });
+    }
+  });
   
-  return guidanceTemplates[Math.floor(Math.random() * guidanceTemplates.length)];
+  return Array.from(matchedMap.values()).sort((a, b) => a.symbol.localeCompare(b.symbol)).slice(0, 8);
 }
 
-// Generate Jungian analysis
-function generateJungianAnalysis(symbols: Array<{ symbol: string; meaning: string }>, themes: string[]): string {
-  const archetype = ARCHETYPES[Math.floor(Math.random() * ARCHETYPES.length)];
-  const symbol = symbols[0]?.symbol || 'the central symbol';
+// ==================== REFINED: Psychological Depth Analysis ====================
+function generatePsychologicalDepth(
+  themes: string[],
+  emotional: ReturnType<typeof analyzeEmotionalDepth>,
+  text: string
+): {
+  jungian: string;
+  shadowWork: string;
+  integration: string;
+} {
+  const isMetaDream = detectMetaDream(text);
   
-  return `From a Jungian perspective, ${symbol.toLowerCase()} represents an encounter with the ${archetype.toLowerCase()} archetype. This suggests a process of individuation where you're integrating unconscious material into conscious awareness. The collective unconscious is speaking through these universal symbols.`;
+  const jungian = isMetaDream
+    ? "A dream within a dream represents the ego observing the unconscious observing itself - a rare glimpse of consciousness exploring its own depths. This meta-awareness suggests you're ready for profound psychological integration."
+    : `The ${themes[0] || 'central'} theme activates archetypal energies in your psyche. Your unconscious is orchestrating these symbols to bring repressed or undeveloped aspects into conscious awareness.`;
+
+  const shadowWork = emotional.primary === 'rejection' || emotional.primary === 'anxiety'
+    ? "The rejection or anxiety in this dream points to shadow material - aspects of yourself or your life you're trying to keep out. What you resist persists. The dream invites you to examine what you're pushing away and why."
+    : "Shadow elements appear subtly - notice what makes you uncomfortable or what you quickly dismiss. These carry keys to wholeness.";
+
+  const integration = emotional.secondary.length > 1
+    ? "The multiplicity of emotions suggests active integration work. You're not avoiding complexity - you're embracing the full spectrum of human experience. This is the path to psychological maturity."
+    : "Clear emotional tone indicates you're processing this material cleanly. Trust the wisdom of your emotional responses.";
+
+  return { jungian, shadowWork, integration };
 }
 
-// Generate shadow work insights
-function generateShadowWork(symbols: Array<{ symbol: string; meaning: string }>): string {
-  const symbol = symbols[0]?.symbol || 'these symbols';
-  
-  return `The appearance of ${symbol.toLowerCase()} may point to shadow aspects seeking integration. These could represent qualities you've disowned or hidden from yourself. Embracing these parts leads to greater wholeness and self-understanding.`;
-}
-
-// Generate spiritual dimension
-function generateSpiritualDimension(themes: string[]): string {
-  const theme = themes[0] || 'your spiritual path';
-  
-  return `On a spiritual level, this dream carries vibrations of soul evolution. The ${theme} theme resonates with your higher purpose and the unfolding of your divine blueprint. Trust the wisdom emerging from your deepest self.`;
-}
-
-// Main interpretation function - local only, but feels incredibly intelligent
+// ==================== MAIN INTERPRETATION ENGINE ====================
 export function interpretDreamLocally(text: string, symbols: Symbol[]): Interpretation {
   if (!text.trim()) {
     throw new Error("Dream text cannot be empty");
   }
 
-  const mainThemes = extractThemes(text);
-  const matchedSymbols = findMatchedSymbols(text, symbols);
-  const emotionalTone = analyzeEmotionalTone(text);
+  // Core analysis
+  const emotional = analyzeEmotionalDepth(text);
+  const thematic = extractThemesAdvanced(text);
+  const cultural = detectCulturalContext(text);
+  const matchedSymbols = findMatchedSymbolsAdvanced(text, symbols);
+  const psychological = generatePsychologicalDepth(thematic.themes, emotional, text);
+  const isMetaDream = detectMetaDream(text);
+
+  // Combine cultural symbols with matched symbols (deduped)
+  const allSymbolsMap = new Map();
+  [...cultural.culturalSymbols, ...matchedSymbols].forEach(s => {
+    const key = s.symbol.toLowerCase();
+    if (!allSymbolsMap.has(key)) allSymbolsMap.set(key, s);
+  });
+  const allSymbols = Array.from(allSymbolsMap.values()).slice(0, 10);
+
+  // Build emotional tone description
+  const emotionalTone = `${emotional.intensity.charAt(0).toUpperCase() + emotional.intensity.slice(1)} ${emotional.primary} energy${emotional.secondary.length > 0 ? ` with undertones of ${emotional.secondary.join(' and ')}` : ''}. ${emotional.complexity}`;
+
+  // Generate narrative
+  const aiNarrative = [
+    thematic.narrative,
+    cultural.insights.length > 0 ? cultural.insights[0] : '',
+    isMetaDream ? "The meta-dream structure adds profound depth - you're witnessing your own consciousness at work." : ''
+  ].filter(Boolean).join(' ');
+
+  // Personal insight combining everything
+  const personalInsight = `${psychological.jungian} ${thematic.confidence[thematic.themes[0]] > 0.8 ? 'This theme appears with remarkable clarity.' : ''} ${cultural.insights.slice(1).join(' ')}`.trim();
+
+  // Guidance
+  const guidance = generateContextualGuidance(thematic.themes, emotional, cultural.contexts);
+
+  // Spiritual dimension
+  const spiritualDimension = cultural.contexts.includes('Spiritual/Religious') || cultural.contexts.includes('Nigerian/West African')
+    ? "Strong spiritual and cultural currents flow through this dream. Honor the wisdom of your traditions while forging your own unique spiritual path."
+    : "Even without overt spiritual symbols, this dream carries soul-level wisdom. What feels sacred in this experience?";
 
   const interpretation: Interpretation = {
-    mainThemes,
+    mainThemes: thematic.themes,
     emotionalTone,
-    symbols: matchedSymbols,
-    personalInsight: generatePsychologicalInsight(mainThemes, matchedSymbols, text),
-    guidance: generateGuidance(matchedSymbols, mainThemes),
-    aiNarrative: generateNarrative(text, mainThemes, matchedSymbols),
-    jungianAnalysis: generateJungianAnalysis(matchedSymbols, mainThemes),
-    emotionalLayers: generateEmotionalLayers(text),
-    shadowWork: generateShadowWork(matchedSymbols),
-    growthOpportunities: generateGrowthOpportunities(mainThemes),
-    followUpQuestions: generateFollowUpQuestions(matchedSymbols),
-    spiritualDimension: generateSpiritualDimension(mainThemes)
+    symbols: allSymbols,
+    personalInsight,
+    guidance,
+    aiNarrative,
+    jungianAnalysis: psychological.jungian,
+    emotionalLayers: {
+      surface: `${emotional.primary} as the immediate emotional response`,
+      deeper: psychological.shadowWork,
+      core: psychological.integration
+    },
+    shadowWork: psychological.shadowWork,
+    growthOpportunities: generateGrowthOpportunities(thematic.themes, emotional),
+    followUpQuestions: generateFollowUpQuestions(thematic.themes, allSymbols, emotional),
+    spiritualDimension
   };
 
   return interpretation;
 }
 
-// Pattern analysis for multiple dreams
+function generateContextualGuidance(
+  themes: string[],
+  emotional: ReturnType<typeof analyzeEmotionalDepth>,
+  contexts: string[]
+): string {
+  const primary = themes[0];
+  
+  const guidanceMap: Record<string, string> = {
+    'boundaries-autonomy': "Honor your need for boundaries. Journal about what you're protecting and why. This is healthy self-preservation.",
+    'spiritual-cleansing': "Consider creating a personal cleansing ritual. Light a candle, take a mindful bath, or pray with intention. Your soul is calling for purification.",
+    'identity-fluidity': "Explore different aspects of yourself through creative expression. Try writing from different perspectives or embodying different energies.",
+    'ancestral-presence': "Light a candle for ancestors or those who've passed. Speak aloud what needs to be said. Create closure where needed.",
+    'creativity-expression': "Feed your creative fire. What project or expression has been calling you? Support from loved ones amplifies creative power.",
+    'psychic-awareness': "Ground yourself daily. Your sensitivity is increasing - protect your energy field with intention and boundaries."
+  };
+
+  let guidance = guidanceMap[primary] || "Sit with this dream's imagery. Let it speak to you without forcing meaning.";
+
+  if (contexts.includes('Nigerian/West African')) {
+    guidance += " Your cultural practices hold deep wisdom - trust indigenous spiritual technologies.";
+  }
+
+  if (emotional.intensity === 'strong') {
+    guidance += " The emotional intensity signals importance - don't dismiss what feels overwhelming.";
+  }
+
+  return guidance;
+}
+
+function generateGrowthOpportunities(
+  themes: string[],
+  emotional: ReturnType<typeof analyzeEmotionalDepth>
+): string[] {
+  const opportunities: string[] = [
+    "Practice naming your emotions as they arise throughout the day",
+    "Create a dream journal specifically for recurring symbols and themes",
+    "Explore the cultural or spiritual traditions referenced in your dreams"
+  ];
+
+  if (themes.includes('boundaries-autonomy')) {
+    opportunities.push("Work on assertiveness and boundary-setting in waking life");
+  }
+
+  if (themes.includes('spiritual-cleansing')) {
+    opportunities.push("Develop a regular spiritual or cleansing practice");
+  }
+
+  if (emotional.secondary.length > 1) {
+    opportunities.push("Practice holding space for conflicting emotions without judgment");
+  }
+
+  return opportunities.slice(0, 4);
+}
+
+function generateFollowUpQuestions(
+  themes: string[],
+  symbols: Array<{ symbol: string; meaning: string }>,
+  emotional: ReturnType<typeof analyzeEmotionalDepth>
+): string[] {
+  const questions: string[] = [];
+
+  if (symbols.length > 0) {
+    questions.push(`What does ${symbols[0].symbol.toLowerCase()} represent in your current life situation?`);
+  }
+
+  questions.push(`The ${emotional.primary} emotion - where else in your life are you feeling this?`);
+
+  if (themes.includes('boundaries-autonomy')) {
+    questions.push("What or who are you protecting yourself from right now?");
+  }
+
+  if (themes.includes('spiritual-cleansing') || themes.includes('ancestral-presence')) {
+    questions.push("What spiritual or ancestral wisdom is seeking expression through you?");
+  }
+
+  questions.push("If this dream were a message from your wisest self, what would it be saying?");
+
+  return questions.slice(0, 4);
+}
 export function analyzeRecurringPatterns(interpretations: Interpretation[]): {
   insights: string[];
   symbolFreq: Record<string, number>;
@@ -313,7 +459,7 @@ export function analyzeRecurringPatterns(interpretations: Interpretation[]): {
   trends: string[];
   emotionalPattern: string | null;
 } {
-  if (interpretations.length === 0) {
+  if (!interpretations || interpretations.length === 0) { // FIXED: Null-safety
     return {
       insights: [],
       symbolFreq: {},
@@ -326,62 +472,47 @@ export function analyzeRecurringPatterns(interpretations: Interpretation[]): {
 
   const symbolFreq: Record<string, number> = {};
   const themeFreq: Record<string, number> = {};
-  const insights: string[] = [];
-  const trends: string[] = [];
 
   interpretations.forEach((interp) => {
     interp.symbols.forEach((s) => {
-      const symbolKey = s.symbol.toLowerCase();
-      symbolFreq[symbolKey] = (symbolFreq[symbolKey] || 0) + 1;
+      const key = s.symbol.toLowerCase();
+      symbolFreq[key] = (symbolFreq[key] || 0) + 1;
     });
 
     interp.mainThemes.forEach((t: string) => {
-      themeFreq[t.toLowerCase()] = (themeFreq[t.toLowerCase()] || 0) + 1;
+      themeFreq[t] = (themeFreq[t] || 0) + 1;
     });
   });
 
   const total = interpretations.length;
+  const insights: string[] = [];
 
-  // Analyze recurring symbols (20%+ frequency)
-  const recurringSymbols = Object.entries(symbolFreq)
+  // Symbol analysis
+  Object.entries(symbolFreq)
     .filter(([, count]) => count / total >= 0.2)
-    .sort((a, b) => b[1] - a[1]);
-
-  if (recurringSymbols.length > 0) {
-    recurringSymbols.forEach(([symbol, count]) => {
-      const percentage = Math.round((count / total) * 100);
-      insights.push(
-        `"${symbol}" appears in ${percentage}% of your dreams, representing a core theme in your subconscious.`,
-      );
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([symbol, count]) => {
+      const pct = Math.round((count / total) * 100);
+      insights.push(`"${symbol}" appears in ${pct}% of dreams - this is a core psychological motif for you`);
     });
+
+  // Theme analysis
+  const dominantTheme = Object.entries(themeFreq).sort((a, b) => b[1] - a[1])[0];
+  if (dominantTheme && dominantTheme[1] / total >= 0.3) {
+    insights.push(`${dominantTheme[0]} is a dominant life theme requiring conscious attention`);
   }
 
-  // Analyze dominant themes
-  const sortedThemes = Object.entries(themeFreq).sort((a, b) => b[1] - a[1]);
-  const dominantTheme = sortedThemes[0];
-
-  if (dominantTheme && dominantTheme[1] / total >= 0.4) {
-    insights.push(
-      `The theme of "${dominantTheme[0]}" dominates (${Math.round((dominantTheme[1] / total) * 100)}%), suggesting this area needs attention.`,
-    );
-  }
-
-  // Detect emotional patterns
-  let emotionalPattern: string | null = null;
-  if (interpretations.length >= 3) {
-    const recentEmotions = interpretations.slice(-3).map((i) => i.emotionalTone.toLowerCase());
-    const hasAnxiety = recentEmotions.some((e) => e.includes("anxious") || e.includes("tension"));
-    const hasJoy = recentEmotions.some((e) => e.includes("joy") || e.includes("uplifting"));
-
-    if (hasAnxiety && !hasJoy) {
-      emotionalPattern = "anxious";
-      trends.push("Recent dreams show heightened anxiety. Consider stress management practices.");
-    } else if (hasJoy && !hasAnxiety) {
-      emotionalPattern = "positive";
-      trends.push("Recent dreams reflect positive emotional states and growth.");
-    } else if (hasAnxiety && hasJoy) {
-      emotionalPattern = "mixed";
-      trends.push("Dreams show emotional complexity, balancing growth with challenges.");
+  // FIXED: Simple correlations (no void chain—build array first)
+  const correlations: string[] = [];
+  const symbolEntries = Object.entries(symbolFreq);
+  const themeEntries = Object.entries(themeFreq);
+  for (let i = 0; i < symbolEntries.length && correlations.length < 3; i++) { // Cap early
+    const [symbol, symCount] = symbolEntries[i];
+    for (let j = 0; j < themeEntries.length && correlations.length < 3; j++) {
+      const [theme, themeCount] = themeEntries[j];
+      if (symCount / total > 0.1 && themeCount / total > 0.1) {
+        correlations.push(`${symbol} often co-occurs with ${theme}`);
+      }
     }
   }
 
@@ -389,8 +520,8 @@ export function analyzeRecurringPatterns(interpretations: Interpretation[]): {
     insights,
     symbolFreq,
     themeFreq,
-    correlations: [],
-    trends,
-    emotionalPattern,
+    correlations,
+    trends: [], // Placeholder for future
+    emotionalPattern: null
   };
 }

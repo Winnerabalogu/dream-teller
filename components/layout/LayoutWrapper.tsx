@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useEffect, useState } from "react"
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
@@ -33,11 +32,11 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
 
   return (
     <main
-      className={`flex h-dvh${
+      className={`min-h-screen transition-all duration-300 ${
         isCollapsed ? "lg:ml-20" : "lg:ml-80"
       } ml-0`}
     >
-      <div className="flex-1 flex flex-col overflow-hidden">{children}</div>
+      <div className="flex-1 flex flex-col overflow-hidden h-full">{children}</div>
     </main>
   )
 }

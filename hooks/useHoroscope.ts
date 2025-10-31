@@ -1,11 +1,70 @@
 // src/hooks/useHoroscope.ts
 "use client"
 
-import { UseHoroscopeReturn, HoroscopeData, SpiritualInsights, DailyGuidance } from "@/lib/types"
 import { useEffect, useState } from "react"
+
+interface HoroscopeData {
+  sign: string
+  element: string
+  rulingPlanet: string
+  traits: string[]
+  strength: string
+  challenge: string
+  compatibleSigns: string[]
+  todayTheme: string
+  advice: string
+  luckyNumber: number
+  bestTime: string
+  lifeLesson: string
+  shadowAspect: string
+  spiritualGift: string
+}
+
+interface DailyReading {
+  theme: string
+  advice: string
+  affirmation: string
+  energyLevel: number
+  energyDescription: string
+  focusAreas: string[]
+  luckyElement: string
+  date: string
+}
+
+interface SpiritualInsights {
+  lifeLesson: string
+  shadowAspect: string
+  spiritualGift: string
+  strength: string
+  challenge: string
+}
+
+interface DailyGuidance {
+  theme: string
+  advice: string
+  luckyNumber: number
+  bestTime: string
+  affirmation?: string
+  energyLevel?: number
+  energyDescription?: string
+  focusAreas?: string[]
+  luckyElement?: string
+}
+
+interface UseHoroscopeReturn {
+  horoscope: HoroscopeData | null
+  dailyReading: DailyReading | null
+  loading: boolean
+  error: string | null
+  spiritualInsights: SpiritualInsights | null
+  dailyGuidance: DailyGuidance | null
+  isOptimalTime: boolean
+  compatibility: (sign2: string) => Promise<{ compatible: boolean; strength: string }>
+}
 
 export function useHoroscope(sign?: string): UseHoroscopeReturn {
   const [horoscope, setHoroscope] = useState<HoroscopeData | null>(null)
+  const [dailyReading, setDailyReading] = useState<DailyReading | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [spiritualInsights, setSpiritualInsights] = useState<SpiritualInsights | null>(null)
@@ -15,6 +74,7 @@ export function useHoroscope(sign?: string): UseHoroscopeReturn {
   useEffect(() => {
     if (!sign) {
       setHoroscope(null)
+      setDailyReading(null)
       setSpiritualInsights(null)
       setDailyGuidance(null)
       setIsOptimalTime(false)
@@ -26,29 +86,42 @@ export function useHoroscope(sign?: string): UseHoroscopeReturn {
       setError(null)
 
       try {
-        const response = await fetch(`/api/horoscope/${sign}`)
-        if (!response.ok) {
+        // Fetch base horoscope
+        const baseResponse = await fetch(`/api/horoscope/${sign}`)
+        if (!baseResponse.ok) {
           throw new Error("Horoscope not found for this sign")
         }
+        const baseData: HoroscopeData = await baseResponse.json()
+        setHoroscope(baseData)
 
-        const data: HoroscopeData = await response.json()
-        setHoroscope(data)
+        // Fetch daily reading
+        const dailyResponse = await fetch(`/api/horoscope/${sign}/daily`)
+        if (!dailyResponse.ok) {
+          throw new Error("Failed to fetch daily reading")
+        }
+        const dailyData: DailyReading = await dailyResponse.json()
+        setDailyReading(dailyData)
 
         // Extract spiritual insights
         setSpiritualInsights({
-          lifeLesson: data.lifeLesson,
-          shadowAspect: data.shadowAspect,
-          spiritualGift: data.spiritualGift,
-          strength: data.strength,
-          challenge: data.challenge,
+          lifeLesson: baseData.lifeLesson,
+          shadowAspect: baseData.shadowAspect,
+          spiritualGift: baseData.spiritualGift,
+          strength: baseData.strength,
+          challenge: baseData.challenge,
         })
 
-        // Extract daily guidance
+        // Combine base and daily guidance
         setDailyGuidance({
-          theme: data.todayTheme,
-          advice: data.advice,
-          luckyNumber: data.luckyNumber,
-          bestTime: data.bestTime,
+          theme: dailyData.theme,
+          advice: dailyData.advice,
+          luckyNumber: baseData.luckyNumber,
+          bestTime: baseData.bestTime,
+          affirmation: dailyData.affirmation,
+          energyLevel: dailyData.energyLevel,
+          energyDescription: dailyData.energyDescription,
+          focusAreas: dailyData.focusAreas,
+          luckyElement: dailyData.luckyElement,
         })
 
         // Check if current time is optimal
@@ -97,6 +170,7 @@ export function useHoroscope(sign?: string): UseHoroscopeReturn {
 
   return {
     horoscope,
+    dailyReading,
     loading,
     error,
     spiritualInsights,

@@ -10,6 +10,7 @@ export interface PatternData {
   insights?: string[];
   emotionalTrend?: Array<{ date: string; tone: string }>;
   emotionalPattern?: string | null;
+  correlations?: string[];
 }
 
 export function usePatterns() {

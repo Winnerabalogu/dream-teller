@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { User, Star, Zap, Calendar, Loader2, Save, Sparkles, Sun, Heart, AlertCircle, Lightbulb } from 'lucide-react';
+import { User, Star, Zap, Calendar, Loader2, Save, Sparkles, Sun, Heart, AlertCircle, Lightbulb, TrendingUp, Target, Flame } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { useHoroscope } from '@/hooks/useHoroscope';
@@ -34,7 +34,7 @@ export default function ProfilePage() {
     birthDate: '',
   });
 
-  const { horoscope, loading: horoscopeLoading, dailyGuidance, spiritualInsights, isOptimalTime } = useHoroscope(formData.starSign);
+  const { horoscope, dailyReading, loading: horoscopeLoading, dailyGuidance, spiritualInsights, isOptimalTime } = useHoroscope(formData.starSign);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -276,7 +276,7 @@ export default function ProfilePage() {
         </motion.form>
 
         {/* Daily Horoscope Section */}
-        {horoscope && (
+        {horoscope && formData.starSign && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -290,118 +290,170 @@ export default function ProfilePage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Sun className="w-6 h-6 text-amber-300" />
-                  <h3 className="text-xl font-light text-amber-100">Your {formData.starSign} Horoscope for Today</h3>
+                  <div className="text-left">
+                    <h3 className="text-xl font-light text-amber-100">
+                      Your {formData.starSign} Reading for {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                    </h3>
+                    {dailyReading && (
+                      <p className="text-sm text-amber-300/70 mt-1">✨ Fresh insights for today</p>
+                    )}
+                  </div>
                 </div>
                 <span className="text-amber-300 text-2xl">{showHoroscope ? '▼' : '▶'}</span>
               </div>
             </button>
 
-            {showHoroscope && !horoscopeLoading && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 space-y-6"
-              >
-                {/* Sign Info */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <p className="text-purple-300 text-sm mb-1">Ruling Planet</p>
-                    <p className="text-white font-medium">{horoscope.rulingPlanet}</p>
-                  </div>
-                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <p className="text-purple-300 text-sm mb-1">Element</p>
-                    <p className="text-white font-medium">{horoscope.element}</p>
-                  </div>
-                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <p className="text-purple-300 text-sm mb-1">Lucky Number</p>
-                    <p className="text-white font-medium text-2xl">{horoscope.luckyNumber}</p>
-                  </div>
+            {showHoroscope && (
+              horoscopeLoading ? (
+                <div className="flex justify-center items-center p-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
                 </div>
-
-                {/* Traits */}
-                <div className="space-y-2">
-                  <p className="text-purple-300 text-sm flex items-center gap-2">
-                    <Heart className="w-4 h-4" /> Your Traits
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {horoscope.traits.map((trait) => (
-                      <span key={trait} className="px-4 py-2 bg-purple-500/20 rounded-full text-purple-200 text-sm border border-purple-400/30">
-                        {trait}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Today's Theme */}
-                {dailyGuidance && (
-                  <div className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-lg p-4 border border-purple-400/30">
-                    <p className="text-purple-300 text-sm mb-2 flex items-center gap-2">
-                      <Sun className="w-4 h-4" /> Today&apos;s Theme
-                    </p>
-                    <p className="text-white leading-relaxed">{dailyGuidance.theme}</p>
-                  </div>
-                )}
-
-                {/* Advice */}
-                {dailyGuidance && (
-                  <div className="bg-gradient-to-r from-amber-600/20 to-rose-600/20 rounded-lg p-4 border border-amber-400/30">
-                    <p className="text-amber-300 text-sm mb-2 flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4" /> Today&apos;s Guidance
-                    </p>
-                    <p className="text-white leading-relaxed">{dailyGuidance.advice}</p>
-                  </div>
-                )}
-
-                {/* Strength & Challenge */}
-                {spiritualInsights && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ) : dailyReading && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 space-y-6"
+                >
+                  {/* Energy Level */}
+                  {dailyGuidance?.energyLevel && (
                     <div className="bg-gradient-to-r from-green-600/20 to-emerald-600/20 rounded-lg p-4 border border-green-400/30">
-                      <p className="text-green-300 text-sm mb-2 font-medium">Your Strength</p>
-                      <p className="text-white text-sm leading-relaxed">{spiritualInsights.strength}</p>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-green-300 text-sm font-medium flex items-center gap-2">
+                          <Flame className="w-4 h-4" /> Today&apos;s Energy Level
+                        </p>
+                        <span className="text-2xl font-bold text-green-200">{dailyGuidance.energyLevel}/10</span>
+                      </div>
+                      <p className="text-white text-sm leading-relaxed">{dailyGuidance.energyDescription}</p>
                     </div>
-                    <div className="bg-gradient-to-r from-orange-600/20 to-yellow-600/20 rounded-lg p-4 border border-orange-400/30">
-                      <p className="text-orange-300 text-sm mb-2 font-medium">Challenge to Embrace</p>
-                      <p className="text-white text-sm leading-relaxed">{spiritualInsights.challenge}</p>
+                  )}
+
+                  {/* Daily Affirmation */}
+                  {dailyGuidance?.affirmation && (
+                    <div className="bg-gradient-to-r from-pink-600/20 to-purple-600/20 rounded-lg p-6 border border-pink-400/30 text-center">
+                      <p className="text-pink-300 text-xs mb-3 uppercase tracking-wide">Today&apos;s Affirmation</p>
+                      <p className="text-white text-lg font-light italic leading-relaxed">&ldquo;{dailyGuidance.affirmation}&rdquo;</p>
+                    </div>
+                  )}
+
+                  {/* Sign Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-purple-300 text-sm mb-1">Ruling Planet</p>
+                      <p className="text-white font-medium">{horoscope.rulingPlanet}</p>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-purple-300 text-sm mb-1">Element</p>
+                      <p className="text-white font-medium">{horoscope.element}</p>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                      <p className="text-purple-300 text-sm mb-1">Lucky Element</p>
+                      <p className="text-white font-medium">{dailyGuidance?.luckyElement || horoscope.luckyNumber}</p>
                     </div>
                   </div>
-                )}
 
-                {/* Spiritual Wisdom */}
-                {spiritualInsights && (
-                  <div className="space-y-4 pt-4 border-t border-white/10">
-                    <h4 className="text-purple-200 font-light flex items-center gap-2">
-                      <Lightbulb className="w-5 h-5 text-yellow-300" /> Spiritual Wisdom
-                    </h4>
-                    
-                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                      <p className="text-purple-300 text-xs mb-2">Life Lesson</p>
-                      <p className="text-white text-sm leading-relaxed">{spiritualInsights.lifeLesson}</p>
+                  {/* Focus Areas */}
+                  {dailyGuidance?.focusAreas && dailyGuidance.focusAreas.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-purple-300 text-sm flex items-center gap-2">
+                        <Target className="w-4 h-4" /> Focus Areas for Today
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {dailyGuidance.focusAreas.map((area, idx) => (
+                          <div key={idx} className="bg-purple-500/20 rounded-lg p-3 text-center border border-purple-400/30">
+                            <p className="text-purple-100 text-sm font-medium">{area}</p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
+                  )}
 
-                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                      <p className="text-purple-300 text-xs mb-2">Spiritual Gift</p>
-                      <p className="text-white text-sm leading-relaxed">{spiritualInsights.spiritualGift}</p>
+                  {/* Today's Theme */}
+                  {dailyGuidance && (
+                    <div className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-lg p-4 border border-purple-400/30">
+                      <p className="text-purple-300 text-sm mb-2 flex items-center gap-2">
+                        <Sun className="w-4 h-4" /> Today&apos;s Theme
+                      </p>
+                      <p className="text-white leading-relaxed">{dailyGuidance.theme}</p>
                     </div>
+                  )}
 
-                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                      <p className="text-purple-300 text-xs mb-2">Shadow Aspect to Integrate</p>
-                      <p className="text-white text-sm leading-relaxed">{spiritualInsights.shadowAspect}</p>
+                  {/* Advice */}
+                  {dailyGuidance && (
+                    <div className="bg-gradient-to-r from-amber-600/20 to-rose-600/20 rounded-lg p-4 border border-amber-400/30">
+                      <p className="text-amber-300 text-sm mb-2 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4" /> Today&apos;s Guidance
+                      </p>
+                      <p className="text-white leading-relaxed">{dailyGuidance.advice}</p>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Best Time & Optimal Status */}
-                {dailyGuidance && (
-                  <div className="text-center pt-4 border-t border-white/10 space-y-2">
-                    <p className="text-purple-300 text-sm">
-                      ✨ Best Time for Intentions: <span className="text-amber-300 font-medium">{dailyGuidance.bestTime}</span>
+                  {/* Traits */}
+                  <div className="space-y-2">
+                    <p className="text-purple-300 text-sm flex items-center gap-2">
+                      <Heart className="w-4 h-4" /> Your Core Traits
                     </p>
-                    {isOptimalTime && (
-                      <p className="text-green-300 text-sm font-light">🌟 It&apos;s your optimal time right now!</p>
-                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {horoscope.traits.map((trait) => (
+                        <span key={trait} className="px-4 py-2 bg-purple-500/20 rounded-full text-purple-200 text-sm border border-purple-400/30">
+                          {trait}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                )}
-              </motion.div>
+
+                  {/* Strength & Challenge */}
+                  {spiritualInsights && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-gradient-to-r from-green-600/20 to-emerald-600/20 rounded-lg p-4 border border-green-400/30">
+                        <p className="text-green-300 text-sm mb-2 font-medium flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4" /> Your Strength
+                        </p>
+                        <p className="text-white text-sm leading-relaxed">{spiritualInsights.strength}</p>
+                      </div>
+                      <div className="bg-gradient-to-r from-orange-600/20 to-yellow-600/20 rounded-lg p-4 border border-orange-400/30">
+                        <p className="text-orange-300 text-sm mb-2 font-medium">Challenge to Embrace</p>
+                        <p className="text-white text-sm leading-relaxed">{spiritualInsights.challenge}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Spiritual Wisdom */}
+                  {spiritualInsights && (
+                    <div className="space-y-4 pt-4 border-t border-white/10">
+                      <h4 className="text-purple-200 font-light flex items-center gap-2">
+                        <Lightbulb className="w-5 h-5 text-yellow-300" /> Spiritual Wisdom
+                      </h4>
+                      
+                      <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                        <p className="text-purple-300 text-xs mb-2">Life Lesson</p>
+                        <p className="text-white text-sm leading-relaxed">{spiritualInsights.lifeLesson}</p>
+                      </div>
+
+                      <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                        <p className="text-purple-300 text-xs mb-2">Spiritual Gift</p>
+                        <p className="text-white text-sm leading-relaxed">{spiritualInsights.spiritualGift}</p>
+                      </div>
+
+                      <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                        <p className="text-purple-300 text-xs mb-2">Shadow Aspect to Integrate</p>
+                        <p className="text-white text-sm leading-relaxed">{spiritualInsights.shadowAspect}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Best Time & Optimal Status */}
+                  {dailyGuidance && (
+                    <div className="text-center pt-4 border-t border-white/10 space-y-2">
+                      <p className="text-purple-300 text-sm">
+                        ✨ Best Time for Intentions: <span className="text-amber-300 font-medium">{dailyGuidance.bestTime}</span>
+                      </p>
+                      {isOptimalTime && (
+                        <p className="text-green-300 text-sm font-light">🌟 It&apos;s your optimal time right now!</p>
+                      )}
+                    </div>
+                  )}
+                </motion.div>
+              )
             )}
           </motion.div>
         )}
@@ -410,7 +462,7 @@ export default function ProfilePage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.3 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-4"
         >
           {[
@@ -446,13 +498,7 @@ export default function ProfilePage() {
         </motion.div>
       </div>
 
-      <style jsx>{`
-        .text-gradient {
-          background: linear-gradient(135deg, #c4b5fd 0%, #93c5fd 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
+      <style jsx>{`       
 
         @keyframes blob {
           0%, 100% {

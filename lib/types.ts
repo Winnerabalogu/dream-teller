@@ -21,7 +21,6 @@ export interface Interpretation {
   followUpQuestions?: string[];
   spiritualDimension?: string;
 }
-
 export interface Dream {
   id: string;
   date: Date;

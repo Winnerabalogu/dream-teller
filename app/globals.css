@@ -461,13 +461,7 @@
         .animation-delay-2000 {
             animation-delay: 2s;
         }
-        
-        .text-gradient {
-            background: linear-gradient(135deg, #c4b5fd 0%, #93c5fd 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+               
         
         @keyframes blob {
             0%,

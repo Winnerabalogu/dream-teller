@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { TrendingUp, Sparkles, Loader2, Cloud, Zap } from 'lucide-react';
@@ -94,13 +94,13 @@ export default function PatternsPage() {
   }
 
   const totalDreams = dreams.length;
-  const recurring = Object.entries(patterns.recurringSymbols || {}).sort(
-    (a, b) => b[1] - a[1]
-  );
+  const recurring = Object.entries(patterns.recurringSymbols || {})
+    .filter(([s]) => !s.includes('Duplicate'))
+    .sort((a, b) => b[1] - a[1]);
 
   return (
     <div className="min-h-screen p-4 sm:p-6 lg:p-12 pt-20 lg:pt-12 space-y-6 sm:space-y-8 relative overflow-hidden">
-      {/* Background blobs - reduced on mobile */}
+      {/* Background blobs */}
       <div className="fixed inset-0 opacity-20 sm:opacity-30 pointer-events-none">
         <div className="absolute top-10 right-4 w-48 h-48 sm:w-72 sm:h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-2xl sm:blur-3xl opacity-20 animate-blob"></div>
         <div className="absolute -bottom-8 left-4 w-48 h-48 sm:w-72 sm:h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-2xl sm:blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
@@ -122,7 +122,7 @@ export default function PatternsPage() {
           </p>
         </motion.div>
 
-        {/* Quick insights grid - single column on mobile */}
+        {/* Quick insights grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <motion.div 
             initial={{ opacity: 0, y: 10 }} 
@@ -158,7 +158,7 @@ export default function PatternsPage() {
                 ? insights.insights[0]
                 : fetchingInsights
                 ? 'Analyzing your dreams for patterns...'
-                : 'No insights yet.'}
+                : patterns.insights?.[0] || 'No insights yet.'}
             </p>
           </motion.div>
 
@@ -175,13 +175,18 @@ export default function PatternsPage() {
                   <span className="text-purple-400 mt-0.5 flex-shrink-0">→</span>
                   <span className="flex-1">{c}</span>
                 </li>
+              )) || patterns.correlations?.slice(0, 3).map((c: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined, i: Key | null | undefined) => (
+                <li key={i} className="flex items-start gap-1 sm:gap-2 line-clamp-2">
+                  <span className="text-purple-400 mt-0.5 flex-shrink-0">→</span>
+                  <span className="flex-1">{c}</span>
+                </li>
               ))}
-              {!insights && <li className="text-purple-300">Analyzing symbol-theme correlations…</li>}
+              {!insights && !patterns.correlations?.length && <li className="text-purple-300">Analyzing symbol-theme correlations…</li>}
             </ul>
           </motion.div>
         </div>
 
-        {/* Charts - single column on mobile */}
+        {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <motion.div 
             initial={{ opacity: 0 }} 
@@ -191,7 +196,7 @@ export default function PatternsPage() {
           >
             <h3 className="text-base sm:text-lg font-medium mb-3 sm:mb-4">Symbol Frequency</h3>
             {insights ? (
-              <div className="h-48 sm:h-60">
+              <div className="h-48 sm:h-60 max-h-[40vh]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={Object.entries(insights.symbolFreq).map(([k, v]) => ({
@@ -199,17 +204,32 @@ export default function PatternsPage() {
                       value: v,
                     }))}
                   >
-                    <XAxis dataKey="name" fontSize={12} />
-                    <YAxis fontSize={12} />
+                    <XAxis 
+                      dataKey="name" 
+                      fontSize={12}
+                      stroke="#c9b086"
+                      tick={{ fill: '#c9b086' }}
+                    />
+                    <YAxis 
+                      fontSize={12}
+                      stroke="#c9b086"
+                      tick={{ fill: '#c9b086' }}
+                    />
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)', 
-                        border: '1px solid rgba(168, 85, 247, 0.3)', 
+                        backgroundColor: 'rgba(184, 153, 104, 0.15)',
+                        border: '1px solid rgba(184, 153, 104, 0.3)', 
                         borderRadius: '8px',
-                        fontSize: '12px'
-                      }} 
+                        fontSize: '12px',
+                        color: '#ddc9a3'
+                      }}
+                      cursor={{ fill: 'rgba(184, 153, 104, 0.1)' }}
                     />
-                    <Bar dataKey="value" radius={[4, 4, 0, 0]} fill="#7c3aed" />
+                    <Bar 
+                      dataKey="value" 
+                      radius={[4, 4, 0, 0]} 
+                      fill="#8b6f47"
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -226,7 +246,7 @@ export default function PatternsPage() {
           >
             <h3 className="text-base sm:text-lg font-medium mb-3 sm:mb-4">Emotional Journey</h3>
             {insights ? (
-              <div className="h-48 sm:h-60">
+              <div className="h-48 sm:h-60 max-h-[40vh]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={insights.sentimentTrend.map((s, i) => ({
@@ -235,29 +255,42 @@ export default function PatternsPage() {
                       date: s.date ?? `${i}`,
                     }))}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+                    <CartesianGrid 
+                      strokeDasharray="3 3" 
+                      stroke="rgba(201, 176, 134, 0.15)" 
+                    />
                     <XAxis
                       dataKey="date"
                       tickFormatter={(d) =>
                         new Date(d).toLocaleDateString?.() ?? d
                       }
                       fontSize={12}
+                      stroke="#c9b086"
+                      tick={{ fill: '#c9b086' }}
                     />
-                    <YAxis domain={[-1, 1]} fontSize={12} />
+                    <YAxis 
+                      domain={[-1, 1]} 
+                      fontSize={12}
+                      stroke="#c9b086"
+                      tick={{ fill: '#c9b086' }}
+                    />
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)', 
-                        border: '1px solid rgba(168, 85, 247, 0.3)', 
+                        backgroundColor: 'rgba(184, 153, 104, 0.15)',
+                        border: '1px solid rgba(184, 153, 104, 0.3)', 
                         borderRadius: '8px',
-                        fontSize: '12px'
-                      }} 
+                        fontSize: '12px',
+                        color: '#ddc9a3'
+                      }}
+                      cursor={{ stroke: 'rgba(184, 153, 104, 0.3)' }}
                     />
                     <Line
                       type="monotone"
                       dataKey="score"
-                      stroke="#7c3aed"
+                      stroke="#8b6f47"
                       strokeWidth={2}
-                      dot={{ r: 3, fill: '#7c3aed' }}
+                      dot={{ r: 3, fill: '#8b6f47', strokeWidth: 0 }}
+                      activeDot={{ r: 5, fill: '#b89968' }}
                     />
                   </LineChart>
                 </ResponsiveContainer>

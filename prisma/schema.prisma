@@ -160,6 +160,25 @@ model Horoscope {
   @@map("horoscopes")
 }
 
+model DailyHoroscope {
+  id                String   @id @default(cuid())
+  sign              String
+  date              String   // YYYY-MM-DD format
+  theme             String   @db.Text
+  advice            String   @db.Text
+  affirmation       String   @db.Text
+  energyLevel       Int      // 1-10
+  energyDescription String   @db.Text
+  focusAreas        String[] // Array of focus areas
+  luckyElement      String
+  createdAt         DateTime @default(now())
+
+  @@unique([sign, date])
+  @@index([sign])
+  @@index([date])
+}
+
+
 model Mantra {
   id          String   @id @default(cuid())
   text        String   @unique @db.Text

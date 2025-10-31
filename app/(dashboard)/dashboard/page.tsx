@@ -5,13 +5,14 @@ import { History, Database, Edit3, Sparkles, Plus, Cloud, Zap, BookOpen, Chevron
 import { useDreams } from '@/hooks/useDreams';
 import { useSymbols } from '@/hooks/useSymbols';
 import DreamInput from '@/components/ui/DreamInput';
-import Interpretation from '@/components/dream/Interpretation';
+import InterpretationDisplay from '@/components/dream/InterpretationDisplay'; // UPDATED: Use comprehensive Display everywhere
 import ExportImport from '@/components/dream/ExportImport';
 import DictionaryModal from '@/components/modals/DictionaryModal';
 import Tabs from '@/components/layout/Tabs';
 import SearchBar from '@/components/dream/SearchBar';
 import type { Tab } from '@/components/layout/Tabs';
 import type { Interpretation as InterpretationType } from '@/lib/types';
+import { Loader2 } from 'lucide-react';
 
 export default function Home() {
   const [interpretation, setInterpretation] = useState<InterpretationType | null>(null);
@@ -22,8 +23,17 @@ export default function Home() {
   const [expandedDreams, setExpandedDreams] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
 
-  const { dreams, refetch: refetchDreams, patterns } = useDreams();
+  const { dreams, refetch: refetchDreams, patterns, loading: dreamsLoading } = useDreams();
   const { symbols, refetch: refetchSymbols, deleteSymbol } = useSymbols();
+
+  // Persist tab in localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('activeTab');
+    if (saved) setActiveTab(saved as any);
+  }, []);
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
 
   useEffect(() => {
     if (interpretation) {
@@ -39,7 +49,6 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      // Send to API which handles both local and AI interpretation
       const response = await fetch('/api/interpret', {
         method: 'POST',
         headers: {
@@ -82,8 +91,16 @@ export default function Home() {
     { id: 'dictionary', label: 'Dictionary', icon: Edit3 },
   ] as const satisfies Tab<'patterns' | 'input' | 'history' | 'dictionary'>[];
 
+  const loading = dreamsLoading || isLoading;
+
   return (
     <div className="min-h-screen pt-12 lg:pt-4 pb-8 sm:pb-12">
+      {/* Global Loading Overlay */}
+      {loading && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+        </div>
+      )}
 
       {/* Content */}
       
@@ -123,7 +140,7 @@ export default function Home() {
               <DreamInput onInterpret={handleInterpret} error={error} isLoading={isLoading} />
               {interpretation && (
                 <div className={`space-y-4 sm:space-y-6 transition-all mt-6 sm:mt-8 ${isAnimating ? 'animate-fade-in' : ''}`}>
-                  <Interpretation interpretation={interpretation} />
+                  <InterpretationDisplay interpretation={interpretation} /> {/* UPDATED: Use comprehensive Display */}
                 </div>
               )}
 
@@ -210,7 +227,7 @@ export default function Home() {
         <div className="mt-3 pt-3 border-t border-white/10 animate-fade-in">  {/* Reduced mt/pt */}
           <h4 className="text-xs sm:text-base font-medium text-purple-300 mb-2">Interpretation</h4>  {/* text-xs base */}
           <div className="text-indigo-200 text-sm leading-relaxed line-clamp-4 sm:line-clamp-none">  {/* Clamp to fit mobile */}
-            <Interpretation interpretation={dream.interpretation as InterpretationType} />
+            <InterpretationDisplay interpretation={dream.interpretation as InterpretationType} /> {/* UPDATED: Use comprehensive Display */}
           </div>
         </div>
       )}
@@ -221,7 +238,6 @@ export default function Home() {
               )}
             </section>
           )}
-
           {activeTab === 'patterns' && (
             <section className="space-y-4 sm:space-y-6 animate-fade-in">
               <h2 className="text-xl sm:text-2xl font-light mb-3 sm:mb-4">Subconscious Patterns</h2>

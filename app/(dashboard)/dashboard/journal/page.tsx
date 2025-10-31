@@ -416,14 +416,7 @@ export default function JournalPage() {
         </div>
       </div>
 
-      <style jsx>{`
-        .text-gradient {
-          background: linear-gradient(135deg, #c4b5fd 0%, #93c5fd 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
+      <style jsx>{`      
         @keyframes blob {
           0%, 100% {
             transform: translate(0, 0) scale(1);
